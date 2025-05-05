@@ -39,8 +39,8 @@ Ansible automation for provisioning and managing Raspberry Pi–based home serv
 
 1. **Clone the repo**  
    ```bash
-   git clone https://github.com/Vantasin/raspberry-pi.git
-   cd raspberry-pi
+   git clone https://github.com/Vantasin/homelab.git
+   cd homelab
    ```
 2. **Install role requirements**  
    ```bash
