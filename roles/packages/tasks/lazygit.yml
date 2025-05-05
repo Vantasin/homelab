@@ -1,0 +1,75 @@
+---
+- name: Check if LazyGit is installed
+  command: lazygit --version
+  register: lazygit_installed
+  ignore_errors: true
+  changed_when: false
+
+- block:
+    - name: Determine architecture
+      command: uname -m
+      register: arch
+      changed_when: false
+
+    - name: Set LazyGit architecture
+      set_fact:
+        lazygit_arch: >-
+          {% set arch_clean = arch.stdout | trim %}
+          {% if arch_clean == 'x86_64' %}Linux_x86_64
+          {% elif arch_clean == 'aarch64' %}Linux_arm64
+          {% elif arch_clean in ['armv7l', 'armv6l'] %}Linux_armv6
+          {% else %}unsupported{% endif %}
+
+    - name: Fail on unsupported architecture
+      fail:
+        msg: "Unsupported architecture: {{ arch.stdout }}"
+      when: lazygit_arch == 'unsupported'
+
+    - name: Get latest LazyGit release tag
+      uri:
+        url: https://api.github.com/repos/jesseduffield/lazygit/releases/latest
+        return_content: yes
+      register: lazygit_version_response
+
+    - name: Set LazyGit version
+      set_fact:
+        lazygit_version: >-
+          {{ lazygit_version_response.content | from_json | json_query('tag_name') | regex_replace('^v', '') }}
+
+    - name: Download LazyGit release archive
+      get_url:
+        url: "https://github.com/jesseduffield/lazygit/releases/download/v{{ lazygit_version | trim }}/lazygit_{{ lazygit_version | trim }}_{{ lazygit_arch | trim }}.tar.gz"
+        dest: /tmp/lazygit.tar.gz
+
+    - name: Extract LazyGit binary
+      unarchive:
+        src: /tmp/lazygit.tar.gz
+        dest: /tmp/
+        remote_src: yes
+        extra_opts: [--strip-components=0]
+
+    - name: Install LazyGit to /usr/local/bin
+      command: install /tmp/lazygit -D -t /usr/local/bin/
+      become: true
+
+    - name: Clean up downloaded tarball
+      file:
+        path: /tmp/lazygit.tar.gz
+        state: absent
+
+    - name: Verify LazyGit install
+      command: lazygit --version
+      register: lazygit_final_version
+      changed_when: false
+
+    - name: Set git default branch to main
+      git_config:
+        scope: global
+        name: init.defaultBranch
+        value: main
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Debug final version
+      debug:
+        msg: "✅ LazyGit {{ lazygit_final_version.stdout }} installed successfully"
+  when: lazygit_installed.rc != 0

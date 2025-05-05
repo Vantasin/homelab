@@ -1,0 +1,6 @@
+---
+zfs_pool_name: ""
+git_dir: "{{ zfs_mount_point }}/Git"
+git_user: "{{ ansible_user_id }}"
+git_group: "{{ ansible_user_gid | default(ansible_user_id) }}"
+git_mode: "0775"

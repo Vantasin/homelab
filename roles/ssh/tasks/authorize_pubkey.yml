@@ -1,0 +1,14 @@
+- name: Ensure .ssh directory exists on live server
+  file:
+    path:  "{{ ansible_user_dir }}/.ssh"
+    state: directory
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+    mode: '0700'
+
+- name: Authorize backup's SSH key on live server
+  authorized_key:
+    user:       "{{ ansible_user_id }}"
+    key:        "{{ backup_ssh_pubkey }}"
+    state:      present
+    manage_dir: false

@@ -1,0 +1,8 @@
+---
+- name: Create daily cron job for Grafana volume backup
+  become: true
+  cron:
+    name: "Daily Grafana backup"
+    minute: "30"
+    hour: "0"
+    job: "{{ docker_dir }}/Monitor/grafana_backup.sh"

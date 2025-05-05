@@ -1,0 +1,6 @@
+---
+galaxy_info:
+  author: Vantasin
+  description: Grant ssh access to live server
+  min_ansible_version: 2.9
+dependencies: []

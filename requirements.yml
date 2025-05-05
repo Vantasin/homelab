@@ -1,0 +1,7 @@
+roles:
+  - src: gantsign.oh-my-zsh
+  - src: geerlingguy.docker
+
+collections:
+  - name: community.docker
+  - name: community.general

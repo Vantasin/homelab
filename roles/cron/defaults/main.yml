@@ -1,0 +1,5 @@
+---
+cron_scripts_path: "{{ scripts_path }}"
+cron_log_path: "/var/log/cron"
+msmtp_config_path: "/etc/msmtprc"
+admin_email: "{{ test_email }}"

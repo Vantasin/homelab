@@ -1,0 +1,10 @@
+---
+- name: Install Oh My Zsh via gantsign.oh-my-zsh
+  import_role:
+    name: gantsign.oh-my-zsh
+
+- name: Install custom plugins
+  include_tasks: install_plugins.yml
+
+- name: Add custom configs
+  include_tasks: custom_config.yml

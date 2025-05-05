@@ -1,0 +1,20 @@
+---
+- name: Ensure parent ZFS dataset exists for Git
+  command: "zfs list -H -o name {{ zfs_pool_name }}/Git"
+  register: git_dataset_check
+  failed_when: false
+  changed_when: false
+
+- name: Create ZFS dataset for Git
+  command: >
+    zfs create -o mountpoint={{ git_dir }}
+    {{ zfs_pool_name }}/Git
+  when: git_dataset_check.rc != 0
+
+- name: Ensure Git directory permissions are correct
+  file:
+    path: "{{ git_dir }}"
+    owner: "{{ git_user }}"
+    group: "{{ git_group }}"
+    mode: "{{ git_mode }}"
+    state: directory

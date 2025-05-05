@@ -1,0 +1,49 @@
+# /etc/fail2ban/jail.local
+
+[DEFAULT]
+#———————————————————————————————————————————————————————————————————
+# Whitelist localhost & IPv6 loopback
+ignoreip = 127.0.0.1/8 ::1 
+
+# Ban settings: 5 failures within 10 minutes → 1 hour ban
+bantime  = 3600
+findtime = 600
+maxretry = 5
+
+# Use systemd journal when available
+backend  = systemd
+
+# Email alerts on ban (needs local mail configured)
+destemail = {{ destemail }}
+sender    = fail2ban@server
+action    = %(action_mwl)s
+
+
+#———————————————————————————————————————————————————————————————————
+# SSH Login Protection
+[sshd]
+enabled  = true
+port     = ssh
+logpath  = %(sshd_log)s
+
+
+#———————————————————————————————————————————————————————————————————
+# Samba (SMB file shares)
+[samba]
+enabled   = true
+port      = 139,445
+filter    = samba
+logpath   = /var/log/samba/log.*
+maxretry  = 3
+
+
+#———————————————————————————————————————————————————————————————————
+# Recidive: catch repeat offenders for a day-long ban
+[recidive]
+enabled   = true
+filter    = recidive
+logpath   = /var/log/fail2ban.log
+action    = iptables-allports[name=recidive]
+bantime   = 86400    ; 24 hours
+findtime  = 86400    ; 24 hours window
+maxretry  = 5

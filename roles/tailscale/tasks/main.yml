@@ -1,0 +1,41 @@
+---
+# Install required packages and Tailscale
+- name: Install required dependencies
+  become: true
+  apt:
+    name: curl
+    state: present
+    update_cache: yes
+
+- name: Check if Tailscale is installed
+  become: true
+  command: tailscale version
+  register: tailscale_installed
+  ignore_errors: true
+  changed_when: false
+
+- name: Download and run Tailscale install script
+  become: true
+  shell: curl -fsSL https://tailscale.com/install.sh | sh
+  when: tailscale_installed.rc != 0
+
+- name: Enable and start the Tailscale service
+  become: true
+  systemd:
+    name: tailscaled
+    enabled: yes
+    state: started
+
+- name: Check Tailscale status
+  become: true
+  command: tailscale status
+  register: tailscale_status
+  changed_when: false
+  ignore_errors: true
+
+- name: Authenticate with Tailscale using Auth key
+  become: true
+  command: tailscale up --auth-key={{ tailscale_auth_key }} --accept-dns=false
+  when: tailscale_status.rc != 0
+  register: tailscale_auth_result
+  changed_when: tailscale_auth_result.rc == 0

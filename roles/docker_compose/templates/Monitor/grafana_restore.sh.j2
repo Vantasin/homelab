@@ -1,0 +1,46 @@
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_DIR="{{ docker_dir }}/{{ stack.name }}/grafana_backups"
+VOLUME_NAME="grafana-storage"
+{% raw %}
+# Gather backups into an array
+mapfile -t BACKUPS < <(ls -1 "$BACKUP_DIR"/grafana-*.tar.gz 2>/dev/null)
+
+if [ ${#BACKUPS[@]} -eq 0 ]; then
+  echo "No backups found in $BACKUP_DIR"
+  exit 1
+fi
+
+# Show a numbered list
+echo "Available backups:"
+for i in "${!BACKUPS[@]}"; do
+  printf "%3d) %s\n" "$((i+1))" "$(basename "${BACKUPS[$i]}")"
+done
+
+# Prompt for a number
+read -rp "Enter the number of the backup to restore: " SELECTION
+
+# Validate input is an integer in range
+if ! [[ "$SELECTION" =~ ^[0-9]+$ ]] \
+   || (( SELECTION < 1 || SELECTION > ${#BACKUPS[@]} )); then
+  echo "Invalid selection: '$SELECTION'"
+  exit 1
+fi
+
+# Map choice to file
+INDEX=$((SELECTION - 1))
+BACKUP_PATH="${BACKUPS[$INDEX]}"
+
+echo "Restoring: $(basename "$BACKUP_PATH") to volume: $VOLUME_NAME"
+
+# Ensure the volume exists, then restore
+docker volume create "$VOLUME_NAME" 2>/dev/null || true
+docker run --rm \
+  -v "$VOLUME_NAME":/data \
+  -v "$BACKUP_DIR":/backup \
+  alpine \
+  sh -c "rm -rf /data/* && tar xzf /backup/$(basename "$BACKUP_PATH") -C /data"
+
+echo "Restore complete. Restart Grafana with: docker compose up -d grafana"
+{% endraw %}

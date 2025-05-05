@@ -1,0 +1,4 @@
+- name: Show final list of changed stacks
+  debug:
+    msg: "Changed stacks: {{ changed_stacks | default([]) | unique }}"
+  when: ansible_verbosity >= 1

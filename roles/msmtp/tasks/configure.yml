@@ -1,0 +1,51 @@
+---
+- name: Create the msmtp configuration file
+  become: true
+  template:
+    dest: "{{ msmtp_config_path }}"
+    src: "{{ msmtp_conf_template }}"
+    owner: root
+    group: root
+    mode: "0640"
+  register: msmtp_config_file
+
+- name: Ensure msmtp log directory exists
+  become: true
+  file:
+    path: "{{ msmtp_logfile_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Check if the msmtp log file exists
+  become: true
+  stat:
+    path: "{{ msmtp_logfile_path }}"
+  register: msmtp_log_stat
+
+- name: Create the msmtp log file if it does not exist
+  become: true
+  file:
+    path: "{{ msmtp_logfile_path }}"
+    state: touch
+    mode: "0644"
+    owner: root
+    group: root
+  when: not msmtp_log_stat.stat.exists
+
+- name: Ensure the msmtp log file has correct permissions
+  become: true
+  file:
+    path: "{{ msmtp_logfile_path }}"
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Set msmtp as default sendmail
+  become: true
+  file:
+    src: /usr/bin/msmtp
+    dest: /usr/sbin/sendmail
+    state: link
+    force: true

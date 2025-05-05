@@ -1,0 +1,12 @@
+{{ cron_log_path }}/reboot_check.log
+{{ cron_log_path }}/zfs_scrub.log
+{
+    daily
+    rotate 30
+    compress
+    missingok
+    notifempty
+    copytruncate
+    dateext
+    dateformat -%Y-%m-%d
+}

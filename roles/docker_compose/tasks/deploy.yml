@@ -1,0 +1,14 @@
+- name: Starting Docker Compose deployment
+  debug:
+    msg: "Deploying stacks: {{ docker_stack | map(attribute='name') | list }}"
+  when: ansible_verbosity >= 1
+
+- name: Deploy Docker Compose stack
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_dir }}/{{ item.name }}"
+    files:
+      - "{{ docker_dir }}/{{ item.name }}/docker-compose.yml"
+    state: present
+  loop: "{{ docker_stack }}"
+  when: docker_dir is defined

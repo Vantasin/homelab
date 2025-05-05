@@ -1,0 +1,16 @@
+# Sanoid configuration for backup server
+# This config assumes snapshots are being pulled via Syncoid
+# and that only pruning should occur — no snapshots should be created here
+
+[{{ syncoid_dest_dataset }}]
+use_template = prune_only
+recursive = yes
+
+[template_prune_only]
+autosnap = no         # Do not create snapshots here
+autoprune = yes       # But do prune what is received via Syncoid
+hourly = 0
+daily = 7
+weekly = 4
+monthly = 12
+yearly = 3

@@ -1,0 +1,27 @@
+---
+- name: Gather and set Syncoid source info
+  include_tasks: set_source_info.yml
+
+- name: Validate hosts
+  include_tasks: validate_hosts.yml
+
+- name: Trust live host key for root
+  include_tasks: add_known_host.yml
+
+- name: Install Syncoid dependencies
+  include_tasks: install_deps.yml
+
+- name: Configure Sanoid
+  include_tasks: sanoid_config.yml
+
+- name: Deploy Syncoid notifier script
+  include_tasks: deploy_notifier.yml
+
+- name: Deploy Syncoid status helper script
+  include_tasks: deploy_status.yml
+
+- name: Schedule Syncoid cron job
+  include_tasks: schedule_cron.yml
+
+- name: Install Syncoid logrotate config
+  include_tasks: install_logrotate.yml

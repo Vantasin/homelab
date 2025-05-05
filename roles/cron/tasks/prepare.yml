@@ -1,0 +1,13 @@
+- name: Ensure script directory exists
+  become: true
+  file:
+    path: "{{ cron_scripts_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure cron log directory exists
+  become: true
+  file:
+    path: "{{ cron_log_path }}"
+    state: directory
+    mode: '0755'

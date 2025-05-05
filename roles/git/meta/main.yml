@@ -1,0 +1,6 @@
+---
+galaxy_info:
+  author: Vantasin
+  description: Create a Git directory on ZFS with proper permissions
+  min_ansible_version: 2.9
+dependencies: []

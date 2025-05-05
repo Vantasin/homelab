@@ -1,0 +1,7 @@
+- name: Schedule daily Joplin backup
+  become: true
+  cron:
+    name: "Daily Joplin backup"
+    job: "{{ docker_dir }}/Joplin/joplin_backup.sh"
+    minute: "45"
+    hour: "0"

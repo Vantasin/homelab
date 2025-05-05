@@ -1,0 +1,5 @@
+- name: Loop over Time Machine users
+  include_tasks: users_per_item.yml
+  loop: "{{ time_machine_users }}"
+  loop_control:
+    loop_var: user

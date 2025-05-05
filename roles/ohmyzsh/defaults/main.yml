@@ -1,0 +1,30 @@
+---
+ohmyzsh_user: "{{ ansible_user_id }}"
+
+ohmyzsh_theme: "jtriley"
+
+ohmyzsh_plugins:
+  - git
+  - zsh-syntax-highlighting
+  - zsh-autosuggestions
+  - fzf
+
+ohmyzsh_update_mode: auto
+ohmyzsh_update_frequency: 13
+
+users:
+  - username: "{{ ohmyzsh_user }}"
+    oh_my_zsh:
+      theme: "{{ ohmyzsh_theme }}"
+      plugins: "{{ ohmyzsh_plugins }}"
+      update_mode: "{{ ohmyzsh_update_mode }}"
+      update_frequency: "{{ ohmyzsh_update_frequency }}"
+
+ohmyzsh_custom_configs:
+  - { name: "correction.zsh", content: 'ENABLE_CORRECTION="true"' }
+  - { name: "editor.zsh", content: "export EDITOR='nano'" }
+  - { name: "aliases.zsh", content: "alias l='lsd -A'\nalias rangerz='ranger --choosedir=$HOME/.rangerdir; LASTDIR=$(cat $HOME/.rangerdir); z \"$LASTDIR\"'" }
+  - { name: "neofetch.zsh", content: "if [[ -o interactive ]]; then\n    neofetch\nfi" }
+  - { name: "zoxide.zsh", content: 'eval "$(zoxide init zsh)"' }
+  - { name: "lazydocker.zsh", content: 'export PATH="$HOME/.local/bin:$PATH"' }
+  - { name: "paths.zsh", content: 'export PATH="/usr/sbin:$PATH"' }

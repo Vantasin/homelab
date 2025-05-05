@@ -1,0 +1,15 @@
+---
+- name: Install ZFS packages
+  include_tasks: install.yml
+
+- name: Detect usable drives
+  include_tasks: detect.yml
+
+- name: Import existing ZFS pool if available
+  include_tasks: import.yml
+
+- name: Create ZFS pool if not already imported
+  include_tasks: create.yml
+
+- name: Configure ZFS options
+  include_tasks: config.yml

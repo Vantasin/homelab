@@ -1,0 +1,7 @@
+---
+- name: Install basic utility packages
+  become: true
+  apt:
+    name: "{{ packages_to_install }}"
+    state: present
+    update_cache: yes

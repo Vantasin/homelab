@@ -1,0 +1,6 @@
+---
+- name: Test msmtp configuration
+  become: true
+  shell: |
+    echo "Test email from Ansible setup" | msmtp --debug --logfile="{{ msmtp_logfile_path }}" -a default {{ msmtp_test_recipient }}
+  changed_when: false

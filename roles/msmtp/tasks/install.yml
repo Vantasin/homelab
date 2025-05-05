@@ -1,0 +1,12 @@
+---
+- name: Ensure msmtp is installed
+  become: true
+  package:
+    name: msmtp
+    state: present
+
+- name: Ensure logrotate is installed
+  become: true
+  package:
+    name: logrotate
+    state: present

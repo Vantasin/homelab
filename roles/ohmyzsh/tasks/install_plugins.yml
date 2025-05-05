@@ -1,0 +1,16 @@
+---
+- name: Install zsh-syntax-highlighting plugin
+  git:
+    repo: "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+    dest: "/home/{{ ohmyzsh_user }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+    update: yes
+    force: no
+  become: false
+
+- name: Install zsh-autosuggestions plugin
+  git:
+    repo: "https://github.com/zsh-users/zsh-autosuggestions.git"
+    dest: "/home/{{ ohmyzsh_user }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+    update: yes
+    force: no
+  become: false

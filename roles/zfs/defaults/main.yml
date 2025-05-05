@@ -1,0 +1,23 @@
+---
+zfs_pool_name: tank
+zfs_pool_type: mirror
+
+# Number of disks required for the specified pool type (e.g., mirror = 2, raidz = 3, etc.)
+zfs_required_disk_count: 2
+
+# List additional device paths to exclude (e.g. root/boot or manually reserved disks)
+excluded_disks:
+#  - nvme0n1
+#  - mmcblk0
+
+# File to persist ZFS pool info
+persist_file: /etc/ansible/facts.d/zfs_pool.fact
+
+# Config settings
+zfs_arc_max: 2147483648
+zfs_enable_compression: true
+zfs_compression_algorithm: lz4
+zfs_disable_atime: true
+
+# Dry run: set to true to simulate pool creation (shows command only)
+zfs_dry_run: false

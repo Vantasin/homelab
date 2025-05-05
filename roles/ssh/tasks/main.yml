@@ -1,0 +1,18 @@
+---
+# Only run these steps when we're on the live server
+# (delegating keygen & fetch back to the backup host)
+
+- name: Ensure SSH keypair exists on backup server
+  include_tasks: generate_ssh_keypair.yml
+  when: inventory_hostname == live_host
+
+- name: Fetch SSH public key from backup server
+  include_tasks: fetch_backup_pubkey.yml
+  when: inventory_hostname == live_host
+
+- name: Authorize SSH key on live server
+  include_tasks: authorize_pubkey.yml
+  when: inventory_hostname == live_host
+
+- name: Disable SSH password authentication on all hosts
+  include_tasks: disable_password.yml

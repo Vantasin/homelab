@@ -1,0 +1,4 @@
+---
+- name: Include Git ZFS dataset creation and permission setup
+  import_tasks: create_git_dir.yml
+  become: true

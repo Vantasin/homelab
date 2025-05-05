@@ -1,0 +1,43 @@
+---
+- name: Create ZFS pool with 4K alignment if not already imported
+  become: true
+  command: >
+    zpool create -f -o ashift=12 {{ zfs_pool_name }} {{ zfs_pool_type }} {{ candidate_disks | join(' ') }}
+  when:
+    - candidate_disks | length == zfs_required_disk_count
+    - zfs_pool_check.rc != 0
+    - not zfs_dry_run
+
+- name: Show pool creation command (dry-run only)
+  debug:
+    msg: >
+      🧪 Dry-run: Would run `zpool create -f -o ashift=12 {{ zfs_pool_name }} {{ zfs_pool_type }} {{ candidate_disks | join(' ') }}`
+  when:
+    - candidate_disks | length == zfs_required_disk_count
+    - zfs_pool_check.rc != 0
+    - zfs_dry_run
+
+- name: Persist ZFS pool info as Ansible fact
+  become: true
+  copy:
+    dest: "{{ persist_file }}"
+    content: |
+      [zfs_pool]
+      name={{ zfs_pool_name }}
+      type={{ zfs_pool_type }}
+      devices={{ candidate_disks | join(',') }}
+      created=true
+    mode: '0644'
+  when:
+    - candidate_disks | length == zfs_required_disk_count
+    - zfs_pool_check.rc != 0
+    - not zfs_dry_run
+
+- name: Warn if unexpected number of candidate disks found
+  debug:
+    msg: >
+      Expected exactly {{ zfs_required_disk_count }} candidate disk(s) for ZFS pool '{{ zfs_pool_name }}'.
+      Found: {{ candidate_disks | length }} — {{ candidate_disks }}
+  when:
+    - zfs_pool_check.rc != 0
+    - candidate_disks | length != zfs_required_disk_count

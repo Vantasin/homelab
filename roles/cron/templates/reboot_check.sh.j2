@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -f /var/run/reboot-required ]; then
+  SUBJECT="🔁 Reboot required on $(hostname)"
+  BODY="A reboot is required on $(hostname) as of $(date).\n\nTriggered by /var/run/reboot-required."
+
+  {
+    echo "Subject: $SUBJECT"
+    echo "To: {{ admin_email }}"
+    echo "MIME-Version: 1.0"
+    echo "Content-Type: text/plain; charset=UTF-8"
+    echo
+    echo -e "$BODY"
+  } | msmtp "{{ admin_email }}"
+fi

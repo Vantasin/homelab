@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ZFS_POOL="{{ zfs_pool_name }}"
+STATUS=0
+LOG=""
+
+START_TIME="$(date +'%F %T')"
+LOG+="INFO  $START_TIME  Starting ZFS scrub on ${ZFS_POOL}\n"
+
+# Start the scrub
+if zpool scrub "$ZFS_POOL"; then
+  LOG+="✅ Scrub initiated\n"
+else
+  STATUS=1
+  LOG+="❌ Scrub failed to start\n"
+fi
+
+# Wait for the scrub to finish
+LOG+="INFO  $(date +'%F %T')  Waiting for scrub to complete...\n"
+while zpool status "$ZFS_POOL" | grep -q "scrub in progress"; do
+  sleep 10
+done
+
+# Capture final status
+ZPOOL_STATUS="$(zpool status "$ZFS_POOL")"
+LOG+="\n=== ZPOOL status after scrub ===\n$ZPOOL_STATUS\n"
+
+if echo "$ZPOOL_STATUS" | grep -q "errors: No known data errors"; then
+  SUBJECT="✅ ZFS scrub completed successfully on $(hostname)"
+else
+  STATUS=1
+  SUBJECT="❌ ZFS scrub reported errors on $(hostname)"
+fi
+
+END_TIME="$(date +'%F %T')"
+LOG+="INFO  $END_TIME  ZFS scrub script completed\n"
+
+# Send email
+{
+  echo "Subject: $SUBJECT"
+  echo "To: {{ admin_email }}"
+  echo "MIME-Version: 1.0"
+  echo "Content-Type: text/plain; charset=UTF-8"
+  echo
+  echo -e "$LOG"
+} | msmtp "{{ admin_email }}"

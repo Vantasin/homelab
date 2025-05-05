@@ -1,0 +1,38 @@
+---
+# tasks file for nano
+- name: Ensure .nano directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.nano"
+    state: directory
+    mode: '0755'
+
+- name: Clone nanorc repository if not already cloned
+  git:
+    repo: https://github.com/scopatz/nanorc.git
+    dest: "{{ ansible_env.HOME }}/.nano"
+    update: yes
+    force: no
+
+- name: Check if .nanorc file exists
+  stat:
+    path: "{{ ansible_env.HOME }}/.nanorc"
+  register: nanorc_file
+
+- name: Create .nanorc file if it does not exist
+  command: touch "{{ ansible_env.HOME }}/.nanorc"
+  when: not nanorc_file.stat.exists
+
+- name: Ensure .nanorc file has correct permissions
+  file:
+    path: "{{ ansible_env.HOME }}/.nanorc"
+    mode: '0644'
+
+- name: Configure .nanorc file for syntax highlighting and custom settings
+  blockinfile:
+    path: "{{ ansible_env.HOME }}/.nanorc"
+    block: |
+      include {{ ansible_env.HOME }}/.nano/*.nanorc
+      set autoindent
+      set tabsize 4
+      set softwrap
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"

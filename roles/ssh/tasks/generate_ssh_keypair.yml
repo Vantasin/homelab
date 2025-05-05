@@ -1,0 +1,11 @@
+- name: Generate SSH keypair on backup server if missing
+  ansible.builtin.openssh_keypair:
+    path:    "{{ hostvars[backup_host].ansible_user_dir }}/.ssh/id_rsa"
+    type:    rsa
+    size:    4096
+    owner:   "{{ hostvars[backup_host].ansible_user_id }}"
+    group:   "{{ hostvars[backup_host].ansible_user_id }}"
+    mode:    '0600'
+  become:       true
+  become_user:  "{{ hostvars[backup_host].ansible_user_id }}"
+  delegate_to:  "{{ backup_host }}"

@@ -1,0 +1,7 @@
+---
+- name: Ensure cron service is enabled and running
+  become: true
+  ansible.builtin.service:
+    name: cron
+    enabled: true
+    state: started

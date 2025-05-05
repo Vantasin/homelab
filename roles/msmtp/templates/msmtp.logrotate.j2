@@ -1,0 +1,11 @@
+{{ msmtp_logfile_path }} {
+    daily
+    rotate 30
+    dateext
+    dateformat -%Y-%m-%d
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+}

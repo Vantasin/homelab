@@ -1,0 +1,9 @@
+---
+- name: Schedule syncoid pull replication cron
+  cron:
+    name: "Syncoid pull replication with alerting"
+    minute: '0'
+    hour:   '1'
+    job:    "{{ syncoid_cron_script_path }}/syncoid_cron_notify.sh"
+    user:   root
+  become: true

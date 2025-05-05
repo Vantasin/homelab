@@ -1,0 +1,4 @@
+---
+# These will be overridden by group_vars/all.yml
+backup_host: "{{ backup_host | default('backup') }}"
+live_host:   "{{ live_host   | default('testpi') }}"

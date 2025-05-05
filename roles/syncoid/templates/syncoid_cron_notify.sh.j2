@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Ensure script is run as root
+if [[ "$EUID" -ne 0 ]]; then
+  echo "This script must be run as root." >&2
+  exit 1
+fi
+
+LOCKFILE="/tmp/syncoid.lock"
+LOG="/var/log/syncoid.log"
+STATUS=0
+DATE="$(date '+%Y-%m-%d %H:%M:%S')"
+
+# Try to acquire lock
+exec 9>"$LOCKFILE"
+if ! flock -n 9; then
+  {
+    echo "Subject: ⚠️ Syncoid skipped on $(hostname) at $DATE"
+    echo "To: {{ admin_email }}"
+    echo "MIME-Version: 1.0"
+    echo "Content-Type: text/plain; charset=UTF-8"
+    echo
+    echo "⚠️ Syncoid pull replication from {{ live_host }} was skipped on $(hostname)."
+    echo "Reason: Another replication job is still running."
+    echo "Timestamp: $DATE"
+  } | msmtp "{{ admin_email }}"
+  exit 1
+fi
+
+# Run syncoid command with timestamped logging
+{
+  echo "[$DATE] Starting syncoid replication job."
+
+  /usr/sbin/syncoid --recursive \
+    --sshkey "{{ syncoid_ssh_key_path }}" \
+    --mbuffer-size "{{ syncoid_mbuffer_size }}" \
+    --exclude="^{{ syncoid_dest_dataset }}/TimeMachine($|/)" \
+    "{{ syncoid_source_user }}@{{ syncoid_source_host }}:{{ syncoid_source_dataset }}" \
+    "{{ syncoid_dest_dataset }}/backup"
+} >> "$LOG" 2>&1 || STATUS=1
+
+# Send failure email if syncoid failed
+if [[ $STATUS -ne 0 ]]; then
+  {
+    echo "Subject: ❌ Syncoid replication failed on $(hostname) at $DATE"
+    echo "To: {{ admin_email }}"
+    echo "MIME-Version: 1.0"
+    echo "Content-Type: text/plain; charset=UTF-8"
+    echo
+    echo "❌ Syncoid pull replication from {{ live_host }} failed on $(hostname)."
+    echo "Timestamp: $DATE"
+    echo
+    echo "Last 100 lines of log:"
+    tail -n 100 "$LOG"
+  } | msmtp "{{ admin_email }}"
+fi

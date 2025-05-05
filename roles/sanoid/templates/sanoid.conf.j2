@@ -1,0 +1,29 @@
+# Default template for datasets you want regular snapshots for
+[{{ pool }}]
+use_template = default
+recursive = yes
+
+[template_default]
+autosnap = yes
+autoprune = yes
+hourly = 0
+daily = 7
+weekly = 4
+monthly = 6
+yearly = 0
+
+# --- Excluded dataset ---
+
+# Skip Time Machine snapshots completely (recommended)
+[{{ pool }}/TimeMachine]
+use_template = none
+recursive = yes
+
+[template_none]
+autosnap = no
+autoprune = yes
+hourly = 0
+daily = 0
+weekly = 0
+monthly = 0
+yearly = 0

@@ -1,0 +1,28 @@
+---
+- name: Ensure ZFS is installed (Debian-based)
+  become: true
+  apt:
+    name: zfsutils-linux
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure ZFS is installed (Arch Linux)
+  become: true
+  pacman:
+    name: zfs-dkms
+    state: present
+  when: ansible_os_family == "Archlinux"
+
+- name: Ensure ZFS is installed (RedHat-based)
+  become: true
+  dnf:
+    name: zfs
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure ZFS is installed (FreeBSD)
+  become: true
+  pkgng:
+    name: openzfs
+    state: present
+  when: ansible_os_family == "FreeBSD"

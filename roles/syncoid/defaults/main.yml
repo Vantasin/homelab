@@ -1,0 +1,23 @@
+---
+# These will be overridden by group_vars/all.yml
+backup_host: "{{ backup_host | default('backup') }}"
+live_host:   "{{ live_host   | default('testpi') }}"
+
+# Where to install the wrapper & notifier scripts
+syncoid_cron_script_path: "{{ scripts_path | default('/usr/local/bin') }}"
+syncoid_log_path: /var/log
+
+# Email for failure alerts
+admin_email: "{{ test_email }}"
+
+# ZFS dataset (or pool) names
+# Adjust these as needed, or override in group_vars
+syncoid_source_dataset: "{{ zfs_pool_name | default('tank') }}"
+syncoid_dest_dataset: "{{ syncoid_source_dataset }}"
+
+# Package list for replication
+syncoid_packages:
+  - sanoid          # snapshot manager + syncoid
+
+# Syncoid buffering & progress defaults
+syncoid_mbuffer_size: 128M

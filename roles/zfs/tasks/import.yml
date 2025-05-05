@@ -1,0 +1,32 @@
+---
+- name: Check if ZFS pool is already imported
+  become: true
+  command: zpool list {{ zfs_pool_name }}
+  register: zfs_pool_check
+  failed_when: false
+  changed_when: false
+
+- name: List all importable ZFS pools
+  become: true
+  command: zpool import
+  register: zfs_import_list
+  failed_when: false
+  changed_when: false
+  when: zfs_pool_check.rc != 0
+
+- name: Try importing ZFS pool if found in import list
+  become: true
+  command: zpool import {{ zfs_pool_name }}
+  register: zfs_import_attempt
+  failed_when: false
+  changed_when: zfs_import_attempt.rc == 0
+  when:
+    - zfs_pool_check.rc != 0
+    - zfs_import_list.stdout is search(zfs_pool_name)
+
+- name: Re-check if pool is now imported
+  become: true
+  command: zpool list {{ zfs_pool_name }}
+  register: zfs_pool_check
+  failed_when: false
+  changed_when: false

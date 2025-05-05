@@ -1,0 +1,26 @@
+---
+- name: Configure Development Group
+  hosts: development
+  roles:
+    - ssh
+    - packages
+    - ohmyzsh
+    - docker
+    - nano
+    - msmtp
+    - tailscale
+    - zfs
+    - cron
+
+- name: Configure Live Server
+  hosts: testpi
+  roles:
+    - sanoid
+    - git
+    - time_machine
+    - docker_compose
+
+- name: Configure Backup Server
+  hosts: backup
+  roles:
+    - syncoid

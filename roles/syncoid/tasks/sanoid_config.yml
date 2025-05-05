@@ -1,0 +1,14 @@
+---
+- name: Ensure sanoid config directory exists
+  become: true
+  file:
+    path: /etc/sanoid
+    state: directory
+    mode: "0755"
+
+- name: Deploy sanoid.conf
+  become: true
+  template:
+    src: sanoid.conf.j2
+    dest: /etc/sanoid/sanoid.conf
+    mode: "0644"

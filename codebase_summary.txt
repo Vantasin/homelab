@@ -1,0 +1,1106 @@
+Project Path: roles/docker_compose/templates
+Date: Mon 28 Apr 2025 23:00:23 EDT
+
+Folder Structure:
+------------------
+roles/docker_compose/templates
+├── Dashboard
+│   ├── docker-compose.yml.j2
+│   └── env.j2
+├── Immich
+│   ├── docker-compose.yml.j2
+│   ├── env.j2
+│   └── immich_restore.sh.j2
+├── Joplin
+│   ├── docker-compose.yml.j2
+│   ├── env.j2
+│   ├── joplin_backup.sh.j2
+│   └── joplin_restore.sh.j2
+├── Monitor
+│   ├── alert_rules.yml.j2
+│   ├── alertmanager.yml.j2
+│   ├── docker-compose.yml.j2
+│   ├── env.j2
+│   ├── grafana_backup.sh.j2
+│   ├── grafana_restore.sh.j2
+│   └── prometheus.yml.j2
+├── NextCloudAIO
+│   └── docker-compose.yml.j2
+├── NginxProxyManager
+│   └── docker-compose.yml.j2
+├── PiHole
+│   ├── docker-compose.yml.j2
+│   └── env.j2
+├── Portainer
+│   └── docker-compose.yml.j2
+├── Registry
+│   ├── docker-compose.yml.j2
+│   └── generate_htpasswd.sh.j2
+├── StirlingPDF
+│   └── docker-compose.yml.j2
+├── Syncthing
+│   └── docker-compose.yml.j2
+└── WatchTower
+    ├── docker-compose.yml.j2
+    └── env.j2
+
+13 directories, 27 files
+
+Important Files (First 300 Lines Each):
+--------------------------------------
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/Dashboard/docker-compose.yml.j2
+============================================================
+services:
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: homarr
+    restart: unless-stopped
+    ports:
+      - "7575:7575"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./homarr/configs:/app/data/configs
+      - ./homarr/icons:/app/public/icons
+      - ./homarr/data:/data
+      - ./homarr/appdata:/appdata
+    environment:
+      - TZ=America/Toronto  # Change timezone if needed
+      - SECRET_ENCRYPTION_KEY=${SECRET_ENCRYPTION_KEY}
+
+============================================================
+File Name: env.j2
+File Path: roles/docker_compose/templates/Dashboard/env.j2
+============================================================
+# Environment variables for Homarr
+SECRET_ENCRYPTION_KEY={{ homarr_secret_encryption_key }}
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/Immich/docker-compose.yml.j2
+============================================================
+#
+# WARNING: Make sure to use the docker-compose.yml of the current release:
+#
+# https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
+#
+# The compose file on main may not be compatible with the latest release.
+#
+
+name: immich
+
+services:
+  immich-server:
+    container_name: immich_server
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    # extends:
+    #   file: hwaccel.transcoding.yml
+    #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+    volumes:
+      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
+      - ${UPLOAD_LOCATION}:/usr/src/app/upload
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      UPLOAD_LOCATION: ${UPLOAD_LOCATION}
+      DB_DATA_LOCATION: ${DB_DATA_LOCATION}
+      TZ: ${TZ}
+      IMMICH_VERSION: ${IMMICH_VERSION}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_DATABASE_NAME: ${DB_DATABASE_NAME}
+    ports:
+      - '2283:2283'
+    depends_on:
+      - redis
+      - database
+    restart: always
+    healthcheck:
+      disable: false
+
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
+    # Example tag: ${IMMICH_VERSION:-release}-cuda
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    # extends: # uncomment this section for hardware acceleration - see https://immich.app/docs/features/ml-hardware-acceleration
+    #   file: hwaccel.ml.yml
+    #   service: cpu # set to one of [armnn, cuda, openvino, openvino-wsl] for accelerated inference - use the `-wsl` version for WSL2 where applicable
+    volumes:
+      - model-cache:/cache
+    environment:
+      UPLOAD_LOCATION: ${UPLOAD_LOCATION}
+      DB_DATA_LOCATION: ${DB_DATA_LOCATION}
+      TZ: ${TZ}
+      IMMICH_VERSION: ${IMMICH_VERSION}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_DATABASE_NAME: ${DB_DATABASE_NAME}
+    restart: always
+    healthcheck:
+      disable: false
+
+  redis:
+    container_name: immich_redis
+    image: docker.io/redis:6.2-alpine@sha256:eaba718fecd1196d88533de7ba49bf903ad33664a92debb24660a922ecd9cac8
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    healthcheck:
+      test: redis-cli ping || exit 1
+    restart: always
+
+  database:
+    container_name: immich_postgres
+    image: docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0@sha256:90724186f0a3517cf6914295b5ab410db9ce23190a2d9d0b9dd6463e3fa298f0
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      # Do not edit the next line. If you want to change the database storage location on your system, edit the value of DB_DATA_LOCATION in the .env file
+      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
+    healthcheck:
+      test: >-
+        pg_isready --dbname="$${POSTGRES_DB}" --username="$${POSTGRES_USER}" || exit 1;
+        Chksum="$$(psql --dbname="$${POSTGRES_DB}" --username="$${POSTGRES_USER}" --tuples-only --no-align
+        --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')";
+        echo "checksum failure count is $$Chksum";
+        [ "$$Chksum" = '0' ] || exit 1
+      interval: 5m
+      start_interval: 30s
+      start_period: 5m
+    command: >-
+      postgres
+      -c shared_preload_libraries=vectors.so
+      -c 'search_path="$$user", public, vectors'
+      -c logging_collector=on
+      -c max_wal_size=2GB
+      -c shared_buffers=512MB
+      -c wal_compression=on
+    restart: always
+
+volumes:
+  model-cache:
+
+============================================================
+File Name: env.j2
+File Path: roles/docker_compose/templates/Immich/env.j2
+============================================================
+# You can find documentation for all the supported env variables at https://immich.app/docs/install/environment-variables
+
+# The location where your uploaded files are stored
+UPLOAD_LOCATION={{ UPLOAD_LOCATION }}
+# The location where your database files are stored
+DB_DATA_LOCATION={{ DB_DATA_LOCATION }}
+
+# To set a timezone, uncomment the next line and change Etc/UTC to a TZ identifier from this list: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
+TZ={{ TZ }}
+
+# The Immich version to use. You can pin this to a specific version like "v1.71.0"
+IMMICH_VERSION={{ IMMICH_VERSION }}
+
+# Connection secret for postgres. You should change it to a random password
+# Please use only the characters `A-Za-z0-9`, without special characters or spaces
+DB_PASSWORD={{ DB_PASSWORD }}
+
+# The values below this line do not need to be changed
+###################################################################################
+DB_USERNAME={{ DB_USERNAME }}
+DB_DATABASE_NAME={{ DB_DATABASE_NAME }}
+============================================================
+File Name: immich_restore.sh.j2
+File Path: roles/docker_compose/templates/Immich/immich_restore.sh.j2
+============================================================
+#!/bin/bash
+set -euo pipefail
+
+# Logging functions for consistent output formatting
+log_info() {
+  echo -e "\e[32m[INFO]\e[0m $1"
+}
+
+log_error() {
+  echo -e "\e[31m[ERROR]\e[0m $1" >&2
+}
+
+# Check if the script is run as root
+check_root() {
+  if [ "$EUID" -ne 0 ]; then
+    log_error "Please run as root (use sudo)"
+    exit 1
+  fi
+}
+
+# Set the base and backup directories and ensure backups exist
+setup_directories() {
+  BASE_DIR="{{ docker_dir }}/{{ stack.name }}"
+  BACKUP_DIR="$BASE_DIR/data/library/backups"
+  
+  if [ ! -d "$BACKUP_DIR" ]; then
+    log_error "Backup directory '$BACKUP_DIR' does not exist."
+    exit 1
+  fi
+
+  # Find backup files (if none, exit)
+  shopt -s nullglob
+  backup_files=("$BACKUP_DIR"/*.sql.gz)
+  shopt -u nullglob
+  {% raw %}
+  if [ ${#backup_files[@]} -eq 0 ]; then
+    log_error "No backup files found in '$BACKUP_DIR'."
+    exit 1
+  fi
+  {% endraw %}
+}
+
+# Extract a friendly date from the file's creation time (or modification time if necessary)
+get_friendly_date() {
+  local file="$1"
+  # Try to get the creation (birth) time using GNU stat (%w).
+  creation_date=$(stat -c %w "$file")
+  # If creation_date is "-" or empty, fallback to the modification time (%y).
+  if [ "$creation_date" = "-" ] || [ -z "$creation_date" ]; then
+    creation_date=$(stat -c %y "$file")
+  fi
+  # Extract just the date portion (first 10 characters: YYYY-MM-DD)
+  local date_part=${creation_date:0:10}
+  # Reformat the date to DD-MM-YYYY using the date command.
+  friendly_date=$(date -d "$date_part" +'%d-%m-%Y')
+  echo "$friendly_date"
+}
+
+# Present the backup selection menu with clear instructions and friendly aliases based on file creation date
+select_backup() {
+  log_info "Please select a backup file from the list below."
+  echo "Enter the number corresponding to the backup you wish to restore."
+  echo "If you don't see your desired backup, ensure that the file exists in:"
+  echo "  $BACKUP_DIR"
+  echo "-----------------------------------------------"
+
+  # Create an array of friendly names based on the creation date of each file.
+  friendly_names=()
+  for file in "${backup_files[@]}"; do
+    friendly_date=$(get_friendly_date "$file")
+    friendly_names+=("Immich Backup $friendly_date")
+  done
+
+  # Use the select command to let the user choose from the friendly names.
+  PS3="Enter your choice (number): "
+  select option in "${friendly_names[@]}"; do
+    if [ -n "${option:-}" ]; then
+      # Map the selection to the corresponding backup file.
+      index=$((REPLY - 1))
+      BACKUP_FILE="${backup_files[$index]}"
+      log_info "You selected: ${friendly_names[$index]}"
+      break
+    else
+      log_error "Invalid selection. Please enter the number corresponding to your chosen backup."
+    fi
+  done
+}
+
+# Perform Docker operations and restore the backup
+restore_backup() {
+  log_info "Stopping Docker containers and removing volumes..."
+  docker compose down -v
+
+  log_info "Removing Postgres data directory..."
+  rm -rf "$BASE_DIR/data/postgres"
+
+  log_info "Pulling the latest Docker images..."
+  docker compose pull
+  
+  log_info "Creating Docker containers..."
+  docker compose create
+
+  log_info "Starting the Postgres container..."
+  docker start immich_postgres
+
+  log_info "Waiting for Postgres to become ready..."
+  local max_wait=30
+  local wait_time=0
+  until docker exec immich_postgres pg_isready -U postgres >/dev/null 2>&1 || [ $wait_time -ge $max_wait ]; do
+    sleep 2
+    wait_time=$((wait_time + 2))
+  done
+
+  if ! docker exec immich_postgres pg_isready -U postgres >/dev/null 2>&1; then
+    log_error "Postgres did not become ready in time."
+    exit 1
+  fi
+
+  log_info "Restoring backup from file: $BACKUP_FILE"
+  gunzip < "$BACKUP_FILE" \
+    | sed "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" \
+    | docker exec -i immich_postgres psql --dbname=postgres --username={{ DB_USERNAME }}
+
+  log_info "Starting remaining Docker services..."
+  docker compose up -d
+  log_info "Immich services have been started successfully."
+}
+
+# Main function to coordinate the script's execution
+main() {
+  check_root
+  setup_directories
+  select_backup
+  restore_backup
+}
+
+# Execute the main function
+main
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/Joplin/docker-compose.yml.j2
+============================================================
+# This is a sample docker-compose file that can be used to run Joplin Server
+# along with a PostgreSQL server.
+#
+# Update the following fields in the stanza below:
+#
+# POSTGRES_USER
+# POSTGRES_PASSWORD
+# APP_BASE_URL
+#
+# APP_BASE_URL: This is the base public URL where the service will be running.
+# - If Joplin Server needs to be accessible over the internet, configure APP_BASE_URL as follows: https://example.com/joplin. 
+# - If Joplin Server does not need to be accessible over the internet, set the APP_BASE_URL to your server's hostname. 
+#     For Example: http://[hostname]:22300. The base URL can include the port.
+# APP_PORT: The local port on which the Docker container will listen. 
+# - This would typically be mapped to port to 443 (TLS) with a reverse proxy.
+# - If Joplin Server does not need to be accessible over the internet, the port can be mapped to 22300.
+
+###############################
+#Default Email: admin@localhost
+#Default Password: admin
+###############################
+
+services:
+    db:
+        image: postgres:16
+        volumes:
+            - ./data/postgres:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        restart: unless-stopped
+        environment:
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_DB=${POSTGRES_DATABASE}
+    app:
+        image: joplin/server:arm64-latest
+        depends_on:
+            - db
+        ports:
+            - "22300:22300"
+        restart: unless-stopped
+        environment:
+            - APP_PORT=22300
+            - APP_BASE_URL=${APP_BASE_URL}
+            - DB_CLIENT=pg
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PORT=${POSTGRES_PORT}
+            - POSTGRES_HOST=db
+
+============================================================
+File Name: env.j2
+File Path: roles/docker_compose/templates/Joplin/env.j2
+============================================================
+# PostgreSQL Configuration
+POSTGRES_USER={{ POSTGRES_USER }}
+POSTGRES_PASSWORD={{ POSTGRES_PASSWORD }}
+POSTGRES_DATABASE={{ POSTGRES_DATABASE }}
+POSTGRES_PORT={{ POSTGRES_PORT }}
+
+# Joplin Server Configuration
+APP_BASE_URL={{ APP_BASE_URL }}
+============================================================
+File Name: joplin_backup.sh.j2
+File Path: roles/docker_compose/templates/Joplin/joplin_backup.sh.j2
+============================================================
+#!/bin/bash
+
+# This script backs up the Joplin PostgreSQL database to a timestamped .dump file
+# and automatically removes backups older than 30 days.
+
+set -euo pipefail
+
+BACKUP_DIR="{{ docker_dir }}/{{ stack.name }}/backups"
+TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
+BACKUP_FILE="joplin_backup_${TIMESTAMP}.dump"
+
+CONTAINER_NAME="joplin-db-1"  # Update if needed
+DB_NAME={{ POSTGRES_DATABASE }}
+DB_USER={{ POSTGRES_USER }}
+
+mkdir -p "$BACKUP_DIR"
+
+# Dump to file inside container
+docker exec -t "$CONTAINER_NAME" \
+  pg_dump -U "$DB_USER" -d "$DB_NAME" -F c -f "/tmp/$BACKUP_FILE"
+
+# Copy from container to host
+docker cp "$CONTAINER_NAME:/tmp/$BACKUP_FILE" "$BACKUP_DIR/$BACKUP_FILE"
+docker exec "$CONTAINER_NAME" rm "/tmp/$BACKUP_FILE"
+
+echo "✅ Backup completed: $BACKUP_DIR/$BACKUP_FILE"
+
+# Keep only 30 most recent backups
+cd "$BACKUP_DIR"
+ls -1t joplin_backup_*.dump | tail -n +31 | xargs -r rm --
+
+============================================================
+File Name: joplin_restore.sh.j2
+File Path: roles/docker_compose/templates/Joplin/joplin_restore.sh.j2
+============================================================
+#!/bin/bash
+
+# This script allows you to select and restore a backup of the Joplin PostgreSQL database.
+
+set -euo pipefail
+
+BACKUP_DIR="{{ docker_dir }}/{{ stack.name }}/backups"
+CONTAINER_NAME="joplin-db-1"
+DB_NAME={{ POSTGRES_DATABASE }}
+DB_USER={{ POSTGRES_USER }}
+
+{% raw %}
+
+cd "$BACKUP_DIR" || { echo "❌ Backup directory not found."; exit 1; }
+
+echo "Available backups:"
+echo
+
+mapfile -t BACKUP_FILES < <(ls -1 joplin_backup_*.dump 2>/dev/null)
+if [[ ${#BACKUP_FILES[@]} -eq 0 ]]; then
+    echo "❌ No backups found in $BACKUP_DIR"
+    exit 1
+fi
+
+for i in "${!BACKUP_FILES[@]}"; do
+    printf "[%2d] %s\n" "$i" "${BACKUP_FILES[$i]}"
+done
+
+echo
+read -rp "Enter the number of the backup to restore: " INDEX
+
+if [[ ! "$INDEX" =~ ^[0-9]+$ ]] || [[ "$INDEX" -lt 0 ]] || [[ "$INDEX" -ge "${#BACKUP_FILES[@]}" ]]; then
+    echo "❌ Invalid selection."
+    exit 1
+fi
+
+SELECTED="${BACKUP_FILES[$INDEX]}"
+echo "⏳ Restoring from: $SELECTED"
+
+docker cp "$BACKUP_DIR/$SELECTED" "$CONTAINER_NAME:/tmp/$SELECTED"
+docker exec -it "$CONTAINER_NAME" pg_restore -U "$DB_USER" -d "$DB_NAME" -c "/tmp/$SELECTED"
+docker exec "$CONTAINER_NAME" rm "/tmp/$SELECTED"
+
+echo "✅ Restore complete."
+{% endraw %}
+
+============================================================
+File Name: alert_rules.yml.j2
+File Path: roles/docker_compose/templates/Monitor/alert_rules.yml.j2
+============================================================
+{% raw %}
+groups:
+  - name: core_alerts
+    rules:
+
+      - alert: InstanceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Host {{ $labels.instance }} is down"
+          description: "No scrape data for {{ $labels.instance }} for 2 minutes."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 90% for 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Available memory is below 10% for over 5 minutes."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+          description: "Less than 15% disk space remaining on {{ $labels.mountpoint }}."
+
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "A Prometheus target is missing"
+          description: "Target {{ $labels.job }} on {{ $labels.instance }} is down for 2+ minutes."
+
+      - alert: PrometheusRuleEvaluationFailures
+        expr: increase(prometheus_rule_evaluation_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus rule evaluation failures"
+          description: "Prometheus has encountered rule evaluation failures in the last 5 minutes."
+
+      - alert: TimeDrift
+        expr: abs(node_time_seconds - time()) > 30
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Clock drift detected on {{ $labels.instance }}"
+          description: "The system clock is drifting more than 30s from Prometheus."
+
+      - alert: DockerContainerOOM
+        expr: container_memory_failcnt > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "OOM kill in container {{ $labels.name }}"
+          description: "Container {{ $labels.name }} has run out of memory."
+
+      - alert: DockerContainerRestarted
+        expr: changes(container_start_time_seconds[5m]) > 1
+        for: 1m
+        labels:
+          severity: warning
+          container: "{{ $labels.name }}"
+        annotations:
+          summary: "Container {{ $labels.container }} crash-looping"
+          description: "Container {{ $labels.name }} has restarted more than once in the last 5 minutes. Investigate logs or resource constraints."
+
+      - alert: HighDockerCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[2m]) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Docker CPU usage for {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using more than 80% CPU."
+{% endraw %}
+
+============================================================
+File Name: alertmanager.yml.j2
+File Path: roles/docker_compose/templates/Monitor/alertmanager.yml.j2
+============================================================
+global:
+  smtp_smarthost: "{{ smtp_host }}:{{ smtp_port }}"
+  smtp_from: "{{ from_email }}"
+  smtp_auth_username: "{{ msmtp_user }}"
+  smtp_auth_password: "{{ email_password }}"
+route:
+  receiver: "default-receiver"
+receivers:
+  - name: "default-receiver"
+    email_configs:
+      - to: "{{ test_email }}"
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/Monitor/docker-compose.yml.j2
+============================================================
+###############################
+# Monitor Stack
+# Grafana Default Email: admin
+# Grafana Default Password: admin
+###############################
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - 9100:9100
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - 3030:3000
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - monitoring
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "8088:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring
+
+volumes:
+  grafana-storage:
+
+networks:
+  monitoring:
+
+============================================================
+File Name: env.j2
+File Path: roles/docker_compose/templates/Monitor/env.j2
+============================================================
+# SMTP settings for Alertmanager
+ALERT_SMTP_SERVER={{ smtp_host }}:{{ smtp_port }}
+ALERT_SMTP_FROM={{ from_email }}
+ALERT_SMTP_USERNAME={{ msmtp_user }}
+ALERT_SMTP_PASSWORD={{ email_password }}
+
+# Recipient address
+ALERT_SMTP_TO={{ test_email }}
+
+============================================================
+File Name: grafana_backup.sh.j2
+File Path: roles/docker_compose/templates/Monitor/grafana_backup.sh.j2
+============================================================
+#!/bin/bash
+
+set -euo pipefail
+
+BACKUP_DIR="{{ docker_dir }}/{{ stack.name }}/grafana_backups"
+VOLUME_NAME="grafana-storage"
+RETENTION_DAYS="30"
+
+mkdir -p "$BACKUP_DIR"
+
+DATE=$(date +%F)
+HOSTNAME=$(hostname)
+BACKUP_FILE="$BACKUP_DIR/grafana-${HOSTNAME}-$DATE.tar.gz"
+
+echo "[$(date)] Starting Grafana volume backup..."
+
+docker run --rm \
+  -v "$VOLUME_NAME":/data \
+  -v "$BACKUP_DIR":/backup \
+  alpine \
+  sh -c "tar czf /backup/$(basename "$BACKUP_FILE") -C /data ."
+
+echo "[$(date)] Cleaning up backups older than $RETENTION_DAYS days..."
+find "$BACKUP_DIR" -name "grafana-*.tar.gz" -mtime +$RETENTION_DAYS -delete
+
+echo "[$(date)] Grafana volume backup complete: $BACKUP_FILE"
+
+============================================================
+File Name: grafana_restore.sh.j2
+File Path: roles/docker_compose/templates/Monitor/grafana_restore.sh.j2
+============================================================
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_DIR="{{ docker_dir }}/{{ stack.name }}/grafana_backups"
+VOLUME_NAME="grafana-storage"
+{% raw %}
+# Gather backups into an array
+mapfile -t BACKUPS < <(ls -1 "$BACKUP_DIR"/grafana-*.tar.gz 2>/dev/null)
+
+if [ ${#BACKUPS[@]} -eq 0 ]; then
+  echo "No backups found in $BACKUP_DIR"
+  exit 1
+fi
+
+# Show a numbered list
+echo "Available backups:"
+for i in "${!BACKUPS[@]}"; do
+  printf "%3d) %s\n" "$((i+1))" "$(basename "${BACKUPS[$i]}")"
+done
+
+# Prompt for a number
+read -rp "Enter the number of the backup to restore: " SELECTION
+
+# Validate input is an integer in range
+if ! [[ "$SELECTION" =~ ^[0-9]+$ ]] \
+   || (( SELECTION < 1 || SELECTION > ${#BACKUPS[@]} )); then
+  echo "Invalid selection: '$SELECTION'"
+  exit 1
+fi
+
+# Map choice to file
+INDEX=$((SELECTION - 1))
+BACKUP_PATH="${BACKUPS[$INDEX]}"
+
+echo "Restoring: $(basename "$BACKUP_PATH") to volume: $VOLUME_NAME"
+
+# Ensure the volume exists, then restore
+docker volume create "$VOLUME_NAME" 2>/dev/null || true
+docker run --rm \
+  -v "$VOLUME_NAME":/data \
+  -v "$BACKUP_DIR":/backup \
+  alpine \
+  sh -c "rm -rf /data/* && tar xzf /backup/$(basename "$BACKUP_PATH") -C /data"
+
+echo "Restore complete. Restart Grafana with: docker compose up -d grafana"
+{% endraw %}
+
+============================================================
+File Name: prometheus.yml.j2
+File Path: roles/docker_compose/templates/Monitor/prometheus.yml.j2
+============================================================
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - "alert_rules.yml"
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/NextCloudAIO/docker-compose.yml.j2
+============================================================
+---
+services:
+  nextcloud-aio-mastercontainer:
+    image: nextcloud/all-in-one:latest
+    init: true
+    restart: always
+    container_name: nextcloud-aio-mastercontainer
+    volumes:
+      - nextcloud_aio_mastercontainer:/mnt/docker-aio-config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 8081:8080  # AIO management port
+    environment:
+      AIO_DISABLE_BACKUP_SECTION: false
+      APACHE_PORT: 11000
+      APACHE_IP_BINDING: {{ ip_binding }}
+      BORG_RETENTION_POLICY: --keep-within=7d --keep-weekly=4 --keep-monthly=6
+      COLLABORA_SECCOMP_DISABLED: false
+      NEXTCLOUD_DATADIR: {{ docker_dir }}/{{ stack.name }}/data/ncdata
+      NEXTCLOUD_MOUNT: {{ docker_dir }}/{{ stack.name }}/data
+      NEXTCLOUD_UPLOAD_LIMIT: 10G
+      NEXTCLOUD_MAX_TIME: 3600
+      NEXTCLOUD_MEMORY_LIMIT: 512M
+      NEXTCLOUD_STARTUP_APPS: deck twofactor_totp tasks calendar contacts notes
+      NEXTCLOUD_ADDITIONAL_APKS: imagemagick
+      NEXTCLOUD_ADDITIONAL_PHP_EXTENSIONS: imagick
+      NEXTCLOUD_KEEP_DISABLED_APPS: false
+      WATCHTOWER_DOCKER_SOCKET_PATH: /var/run/docker.sock
+
+volumes:
+  nextcloud_aio_mastercontainer:
+    name: nextcloud_aio_mastercontainer
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/NginxProxyManager/docker-compose.yml.j2
+============================================================
+services:
+  nginx:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./data/data:/data
+      - ./data/letsencrypt:/etc/letsencrypt
+####
+#
+#     Default Administrator User login:
+#     Email:    admin@example.com
+#     Password: changeme
+#
+####
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/PiHole/docker-compose.yml.j2
+============================================================
+# More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    networks:
+      - pihole_net
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "88:80/tcp"     # Expose Pi-hole's web interface on port 88 of the host
+      - "8443:443/tcp"  # HTTPS with self-signed certificate
+      # Uncomment below if using Pi-hole as your DHCP server
+      # - "67:67/udp"
+    environment:
+      TZ: 'America/Toronto'
+      FTLCONF_webserver_api_password: ${WEBPASSWORD}
+      # Uncomment if using DNSMASQ persistence from v5 migration
+      # FTLCONF_misc_etc_dnsmasq_d: 'true'
+    volumes:
+      - ./data/etc-pihole:/etc/pihole
+      # Uncomment if migrating dnsmasq configs
+      # - ./data/etc-dnsmasq.d:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN   # Needed for DHCP
+      - SYS_TIME    # Needed for NTP time sync
+      - SYS_NICE    # Optional: gives Pi-hole higher process priority
+    restart: unless-stopped
+
+networks:
+  pihole_net:
+    driver: bridge
+
+============================================================
+File Name: env.j2
+File Path: roles/docker_compose/templates/PiHole/env.j2
+============================================================
+# Pihole environment variables
+
+WEBPASSWORD={{ WEBPASSWORD }}
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/Portainer/docker-compose.yml.j2
+============================================================
+---
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/data:/data
+    ports:
+      - 9000:9000
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/Registry/docker-compose.yml.j2
+============================================================
+services:
+  registry:
+    image: registry:latest
+    container_name: registry
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+      REGISTRY_AUTH_HTPASSWD_PATH: "/auth/htpasswd"
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+    volumes:
+      - ./data/data:/data
+      - ./data/registry/auth:/auth
+
+============================================================
+File Name: generate_htpasswd.sh.j2
+File Path: roles/docker_compose/templates/Registry/generate_htpasswd.sh.j2
+============================================================
+#!/bin/bash
+
+# Stop on error
+set -e
+
+# Load secrets directly from Ansible, not from .env
+REGISTRY_USER="{{ REGISTRY_USER }}"
+REGISTRY_PASSWORD="{{ REGISTRY_PASSWORD }}"
+
+# Check if htpasswd is installed
+if ! command -v htpasswd &> /dev/null; then
+    echo "htpasswd not found. Attempting to install apache2-utils..."
+    if sudo apt-get update && sudo apt-get install -y apache2-utils; then
+        echo "htpasswd installed successfully."
+    else
+        echo "Error: Failed to install htpasswd. Please install apache2-utils manually."
+        exit 1
+    fi
+fi
+
+# Set Registry base path to script's location
+REGISTRY_PATH=$(dirname "$(realpath "$0")")
+
+# Define output file path
+OUTPUT_FILE="data/registry/auth/htpasswd"
+
+# Create directory structure for registry authentication
+mkdir -p "$REGISTRY_PATH/data/registry/auth"
+mkdir -p "$REGISTRY_PATH/data/data"
+
+# Check if user already exists in htpasswd
+if [ -f "$REGISTRY_PATH/$OUTPUT_FILE" ]; then
+    if grep -q "^$REGISTRY_USER:" "$REGISTRY_PATH/$OUTPUT_FILE"; then
+        echo "User $REGISTRY_USER already exists in $REGISTRY_PATH/$OUTPUT_FILE."
+        exit 0
+    else
+        echo "Adding user $REGISTRY_USER to the existing htpasswd file."
+        htpasswd -Bb "$REGISTRY_PATH/$OUTPUT_FILE" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
+    fi
+else
+    echo "Creating new htpasswd file for user $REGISTRY_USER."
+    htpasswd -Bbn "$REGISTRY_USER" "$REGISTRY_PASSWORD" > "$REGISTRY_PATH/$OUTPUT_FILE"
+fi
+
+echo "Authentication setup completed successfully."
+echo "Registry data directory is at: $REGISTRY_PATH/data"
+echo "Registry auth directory is at: $REGISTRY_PATH/data/registry/auth"
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/StirlingPDF/docker-compose.yml.j2
+============================================================
+services:
+  stirling-pdf:
+    image: frooodle/s-pdf:latest
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./data/trainingData:/usr/share/tessdata #Required for extra OCR languages
+      - ./data/extraConfigs:/configs
+#      - ./customFiles:/customFiles/
+#      - ./logs:/logs/
+    environment:
+      - DOCKER_ENABLE_SECURITY=false
+      - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+      - LANGS=en_GB
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/Syncthing/docker-compose.yml.j2
+============================================================
+---
+services:
+  syncthing:
+    image: syncthing/syncthing
+    container_name: syncthing
+    hostname: Raspberry Pi Server
+    environment:
+      - PUID=1000
+      - PGID=100
+    volumes:
+      - ./data:/var/syncthing
+    ports:
+      - 8384:8384 # Web UI
+      - 22000:22000/tcp # TCP file transfers
+      - 22000:22000/udp # QUIC file transfers
+      - 21027:21027/udp # Receive local discovery broadcasts
+    restart: unless-stopped
+
+============================================================
+File Name: docker-compose.yml.j2
+File Path: roles/docker_compose/templates/WatchTower/docker-compose.yml.j2
+============================================================
+---
+services:
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower:latest
+    platform: linux/arm64
+    restart: unless-stopped
+    hostname: ${WATCHTOWER_HOSTNAME}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - WATCHTOWER_NOTIFICATIONS=${WATCHTOWER_NOTIFICATIONS}
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${WATCHTOWER_NOTIFICATION_EMAIL_FROM}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD}
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${WATCHTOWER_NOTIFICATION_EMAIL_TO}
+      - WATCHTOWER_CLEANUP=${WATCHTOWER_CLEANUP}
+      - WATCHTOWER_INCLUDE_RESTARTING=${WATCHTOWER_INCLUDE_RESTARTING}
+      - WATCHTOWER_POLL_INTERVAL=${WATCHTOWER_POLL_INTERVAL}
+============================================================
+File Name: env.j2
+File Path: roles/docker_compose/templates/WatchTower/env.j2
+============================================================
+# Watchtower environment variables
+
+# General configuration
+WATCHTOWER_HOSTNAME={{ WATCHTOWER_HOSTNAME }}
+
+# Watchtower settings
+WATCHTOWER_NOTIFICATIONS={{ WATCHTOWER_NOTIFICATIONS }}
+WATCHTOWER_NOTIFICATION_EMAIL_FROM={{ WATCHTOWER_NOTIFICATION_EMAIL_FROM }}
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER={{ WATCHTOWER_NOTIFICATION_EMAIL_SERVER }}
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT={{ WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT }}
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER={{ WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER }}
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD={{ WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD }}
+WATCHTOWER_NOTIFICATION_EMAIL_TO={{ WATCHTOWER_NOTIFICATION_EMAIL_TO }}
+WATCHTOWER_CLEANUP={{ WATCHTOWER_CLEANUP }}
+WATCHTOWER_INCLUDE_RESTARTING={{ WATCHTOWER_INCLUDE_RESTARTING }}
+WATCHTOWER_POLL_INTERVAL={{ WATCHTOWER_POLL_INTERVAL }}
+

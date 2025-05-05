@@ -1,0 +1,9 @@
+---
+- name: Deploy syncoid notifier script
+  template:
+    src: syncoid_cron_notify.sh.j2
+    dest: "{{ syncoid_cron_script_path }}/syncoid_cron_notify.sh"
+    owner: root
+    group: root
+    mode: '0755'
+  become: true

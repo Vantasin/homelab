@@ -1,0 +1,10 @@
+---
+- name: Ensure running on the backup host
+  assert:
+    that: inventory_hostname == backup_host
+    fail_msg: "Role syncoid must run on the host defined as backup_host ({{ backup_host }})"
+
+- name: Ensure live_host exists in inventory
+  assert:
+    that: live_host in hostvars
+    fail_msg: "live_host ({{ live_host }}) is not defined in inventory"

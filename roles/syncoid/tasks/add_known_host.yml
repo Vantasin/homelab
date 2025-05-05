@@ -1,0 +1,24 @@
+---
+- name: Check if live server SSH key is already known
+  ansible.builtin.command: "ssh-keygen -F {{ syncoid_source_host }}"
+  register: known_host_check
+  failed_when: false
+  changed_when: false
+  become: true
+  run_once: true
+
+- name: Fetch live server SSH key if not present
+  ansible.builtin.set_fact:
+    live_host_ssh_key: "{{ lookup('pipe', 'ssh-keyscan -H ' + syncoid_source_host) }}"
+  when: known_host_check.rc != 0
+  run_once: true
+
+- name: Add live server’s SSH key to root’s known_hosts
+  ansible.builtin.known_hosts:
+    path: /root/.ssh/known_hosts
+    name: "{{ syncoid_source_host }}"
+    key: "{{ live_host_ssh_key }}"
+    state: present
+  become: true
+  when: live_host_ssh_key is defined
+  run_once: true

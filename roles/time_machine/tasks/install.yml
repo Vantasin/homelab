@@ -1,0 +1,19 @@
+- name: Install Samba for Time Machine
+  apt:
+    name: samba
+    state: present
+
+- name: Install Python `pexpect` module for Ansible `expect`
+  apt:
+    name: python3-pexpect
+    state: present
+
+- name: Install Avahi daemon
+  apt:
+    name: avahi-daemon
+    state: present
+
+- name: Install Avahi utilities (for validation tool)
+  apt:
+    name: avahi-utils
+    state: present

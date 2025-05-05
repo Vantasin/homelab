@@ -1,0 +1,20 @@
+---
+- name: Include install tasks
+  import_tasks: install.yml
+  become: true
+
+- name: Include ZFS dataset creation tasks
+  import_tasks: zfs.yml
+  become: true
+
+- name: Include user creation tasks
+  import_tasks: users.yml
+  become: true
+
+- name: Include directory setup
+  import_tasks: directories.yml
+  become: true
+
+- name: Include Samba and Avahi config
+  import_tasks: config.yml
+  become: true

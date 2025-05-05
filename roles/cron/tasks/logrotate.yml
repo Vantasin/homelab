@@ -1,0 +1,6 @@
+- name: Ensure logrotate config for cron logs
+  become: true
+  template:
+    src: cron_logrotate.conf.j2
+    dest: /etc/logrotate.d/cron-custom
+    mode: '0644'

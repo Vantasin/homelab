@@ -1,0 +1,7 @@
+---
+- name: Install ZFS, Sanoid, Syncoid & helpers
+  package:
+    name: "{{ syncoid_packages }}"
+    state: present
+  become: true
+  tags: packages

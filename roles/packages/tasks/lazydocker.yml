@@ -1,0 +1,22 @@
+---
+- name: Check if Lazydocker is installed
+  command: "$HOME/.local/bin/lazydocker --version"
+  register: lazydocker_installed
+  ignore_errors: true
+  changed_when: false
+  become: false
+
+- name: Install Lazydocker using install script
+  shell: curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+  args:
+    executable: /bin/bash
+  when: lazydocker_installed.rc != 0
+  become: false
+
+- name: Ensure ~/.local/bin is in PATH via .zshrc
+  lineinfile:
+    path: "/home/{{ ansible_user_id }}/.zshrc"
+    line: 'export PATH="$HOME/.local/bin:$PATH"'
+    state: present
+  become: false
+  when: lazydocker_installed.rc != 0

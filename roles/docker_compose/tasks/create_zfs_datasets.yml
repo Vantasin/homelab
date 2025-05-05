@@ -1,0 +1,36 @@
+---
+- name: Check if parent ZFS dataset {{ zfs_pool }}/docker exists
+  become: true
+  command: zfs list -H -o name {{ zfs_pool }}/docker
+  register: parent_dataset_check
+  failed_when: false
+  changed_when: false
+
+- name: Create parent ZFS dataset {{ zfs_pool }}/docker
+  become: true
+  command: >
+    zfs create -o mountpoint={{ docker_dir }}
+               {{ zfs_pool }}/docker
+  when: parent_dataset_check.rc != 0
+
+- name: Check if docker-compose dataset exists for each stack
+  become: true
+  command: zfs list -H -o name {{ zfs_pool }}/docker/{{ item.name }}
+  register: dataset_check
+  loop: "{{ docker_stack }}"
+  loop_control:
+    label: "{{ item.name }}"
+  failed_when: false
+  changed_when: false
+
+- name: Create ZFS dataset for each docker-compose stack
+  become: true
+  command: >
+    zfs create -o mountpoint={{ docker_dir }}/{{ item.item.name }}
+               -o compression=zstd
+               {{ zfs_pool }}/docker/{{ item.item.name }}
+  loop: "{{ dataset_check.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.rc != 0
+  tags: create_zfs_datasets

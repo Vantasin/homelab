@@ -1,0 +1,6 @@
+timemachine_dir: "{{ zfs_mount_point }}/TimeMachine"
+samba_max_size: 1000G
+
+time_machine_users:
+  - username: "{{ SMB_USER }}"
+    password: "{{ SMB_PASSWORD }}"

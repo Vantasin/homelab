@@ -1,0 +1,8 @@
+---
+- name: Schedule ZFS monthly scrub
+  become: true
+  cron:
+    name: "Nightly ZFS Scrub"
+    minute: "0"
+    hour: "5"
+    job: "{{ cron_scripts_path }}/zfs_scrub.sh >> {{ cron_log_path }}/zfs_scrub.log 2>&1"

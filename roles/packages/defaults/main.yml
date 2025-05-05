@@ -1,0 +1,19 @@
+---
+packages_to_install:
+  - bat
+  - btop
+  - cron
+  - fail2ban
+  - fzf
+  - git
+  - lsd
+  - ncdu
+  - neofetch
+  - ranger
+  - tmux
+  - tldr
+  - tree
+  - zoxide
+  - zsh
+
+destemail: "{{ test_email }}"

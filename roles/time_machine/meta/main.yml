@@ -1,0 +1,6 @@
+---
+galaxy_info:
+  author: Vantasin
+  description: Install and configure Samba and Avahi for Apple Time Machine backups with per-user ZFS datasets.
+  min_ansible_version: 2.9
+dependencies: []

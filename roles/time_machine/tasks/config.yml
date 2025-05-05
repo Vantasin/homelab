@@ -1,0 +1,50 @@
+- name: Deploy smb.conf with per-user Time Machine shares
+  template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Samba
+
+- name: Ensure Avahi is running and enabled
+  systemd:
+    name: avahi-daemon
+    enabled: true
+    state: started
+
+- name: Deploy Avahi service for each Time Machine user
+  template:
+    src: timemachine.service.j2
+    dest: "/etc/avahi/services/timemachine_{{ item.username }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ time_machine_users }}"
+  notify: Restart Avahi
+
+- name: Validate Samba configuration syntax
+  command: testparm -s
+  register: testparm_output
+  changed_when: false
+
+- name: Check if avahi-validate-service is available
+  command: which avahi-validate-service
+  register: avahi_validator
+  changed_when: false
+  failed_when: false
+
+- name: Warn if avahi-validate-service is not available
+  debug:
+    msg: >
+      'avahi-validate-service' not found. Skipping Avahi XML validation.
+      This tool is optional and only used to validate your .service files.
+  when: avahi_validator.rc != 0
+
+- name: Validate Avahi service file for each Time Machine user
+  command: >
+    avahi-validate-service /etc/avahi/services/timemachine_{{ item.username }}.service
+  loop: "{{ time_machine_users }}"
+  when: avahi_validator.rc == 0
+  register: avahi_validation
+  changed_when: false

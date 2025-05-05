@@ -1,0 +1,29 @@
+---
+- name: Find docker-compose template folders
+  find:
+    paths: "{{ role_path }}/templates"
+    file_type: directory
+    depth: 1
+  register: template_dirs
+  delegate_to: localhost
+
+- name: Show template_dirs paths
+  debug:
+    var: template_dirs.files | map(attribute='path') | list
+  when: ansible_verbosity >= 1
+
+- name: Set docker_stack from found template folders
+  set_fact:
+    docker_stack: >-
+      {{
+        template_dirs.files
+        | map(attribute='path')
+        | map('basename')
+        | map('community.general.dict_kv', 'name')
+        | list
+      }}
+
+- name: Show discovered docker stacks
+  debug:
+    msg: "Discovered stacks: {{ docker_stack }}"
+  when: ansible_verbosity >= 1

@@ -1,0 +1,19 @@
+roles/docker_compose
+├── defaults
+├── files
+├── handlers
+├── meta
+├── tasks
+└── templates
+    ├── Immich
+    ├── Joplin
+    ├── NextCloudAIO
+    ├── NginxProxyManager
+    ├── PiHole
+    ├── Portainer
+    ├── Registry
+    ├── StirlingPDF
+    ├── Syncthing
+    └── WatchTower
+
+17 directories

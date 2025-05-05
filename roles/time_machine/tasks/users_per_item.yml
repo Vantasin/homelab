@@ -1,0 +1,24 @@
+- name: Check if Samba user exists
+  command: "pdbedit -L -u {{ user.username }}"
+  register: smb_user_check
+  changed_when: false
+  failed_when: false
+
+- name: Ensure Linux user exists
+  user:
+    name: "{{ user.username }}"
+    state: present
+    system: yes
+    shell: /usr/sbin/nologin
+    create_home: no
+  when: user.username not in smb_user_check.stdout
+  notify: Restart Samba
+
+- name: Ensure Samba user has password
+  expect:
+    command: "smbpasswd -a {{ user.username }}"
+    responses:
+      "New SMB password:": "{{ user.password }}"
+      "Retype new SMB password:": "{{ user.password }}"
+  when: user.username not in smb_user_check.stdout
+  notify: Restart Samba

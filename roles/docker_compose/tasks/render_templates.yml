@@ -1,0 +1,5 @@
+- name: Render all templates for each stack
+  include_tasks: render_templates_per_stack.yml
+  loop: "{{ docker_stack }}"
+  loop_control:
+    loop_var: stack

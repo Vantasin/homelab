@@ -1,0 +1,10 @@
+---
+- name: Create the log rotation configuration file for msmtp
+  become: true
+  template:
+    dest: "{{ logrotate_config_path }}"
+    src: "{{ logrotate_conf_template }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: logrotate_config_file

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -euo pipefail
+
+BACKUP_DIR="{{ docker_dir }}/{{ stack.name }}/grafana_backups"
+VOLUME_NAME="grafana-storage"
+RETENTION_DAYS="30"
+
+mkdir -p "$BACKUP_DIR"
+
+DATE=$(date +%F)
+HOSTNAME=$(hostname)
+BACKUP_FILE="$BACKUP_DIR/grafana-${HOSTNAME}-$DATE.tar.gz"
+
+echo "[$(date)] Starting Grafana volume backup..."
+
+docker run --rm \
+  -v "$VOLUME_NAME":/data \
+  -v "$BACKUP_DIR":/backup \
+  alpine \
+  sh -c "tar czf /backup/$(basename "$BACKUP_FILE") -C /data ."
+
+echo "[$(date)] Cleaning up backups older than $RETENTION_DAYS days..."
+find "$BACKUP_DIR" -name "grafana-*.tar.gz" -mtime +$RETENTION_DAYS -delete
+
+echo "[$(date)] Grafana volume backup complete: $BACKUP_FILE"

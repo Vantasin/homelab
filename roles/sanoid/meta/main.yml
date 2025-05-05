@@ -1,0 +1,6 @@
+---
+galaxy_info:
+  author: Vantasin
+  description: Configure and schedule sanoid ZFS snapshots
+  min_ansible_version: 2.9
+dependencies: []

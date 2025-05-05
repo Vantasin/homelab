@@ -1,0 +1,17 @@
+---
+# Role-specific default variables for msmtp
+
+msmtp_config_path: "/etc/msmtprc"
+logrotate_config_path: "/etc/logrotate.d/msmtp"
+msmtp_logfile_path: "/var/log/msmtp/msmtp.log"
+
+msmtp_conf_template: "msmtp.conf.j2"
+logrotate_conf_template: "msmtp.logrotate.j2"
+
+# Vault-driven (role-specific mapping)
+msmtp_host: "{{ smtp_host }}"
+msmtp_port: "{{ smtp_port }}"
+msmtp_from_email: "{{ from_email }}"
+msmtp_user: "{{ msmtp_user_vault }}"
+msmtp_password: "{{ email_password }}"
+msmtp_test_recipient: "{{ test_email }}"

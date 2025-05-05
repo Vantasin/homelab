@@ -1,0 +1,86 @@
+# Purpose
+#
+# This file serves as a centralized location for storing sensitive configuration variables for various services,
+# such as Tailscale, Immich, Joplin, Pihole, and Watchtower. Each section contains specific keys and values
+# required for the respective service's operation.
+#
+# Replace placeholder values (e.g., <TAILSCALE_AUTH_KEY>, <EMAIL_PASSWORD>) with actual configuration values
+# before use. Keep this file secure and manage access appropriately to protect sensitive information.
+#####################################################################################################################################################################
+# Tailscale environment variables
+#####################################################################################################################################################################
+auth_key: "<TAILSCALE_AUTH_KEY>"  # The authentication key for Tailscale setup.
+#####################################################################################################################################################################
+# msmtp environment variables
+#####################################################################################################################################################################
+smtp_host: "<SMTP_SERVER>"  # The SMTP server to send email through.
+smtp_port: "<SMTP_PORT>"  # The port to send email through.
+from_email: "<FROM_EMAIL_ADDRESS>"  # The email address to send from.
+msmtp_user: "<SMTP_USERNAME>"  # The email account to send from.
+email_password: "<SMTP_PASSWORD>"  # The password for the email account.
+test_email: "<TEST_EMAIL_ADDRESS>" # The email address to send test emails to
+#####################################################################################################################################################################
+# Immich environment variables
+#####################################################################################################################################################################
+# You can find documentation for all the supported env variables at https://immich.app/docs/install/environment-variables
+
+# The location where uploaded files are stored.
+# Example: "./data/library"
+UPLOAD_LOCATION: "<IMMICH_UPLOAD_LOCATION>"
+# The location where database files are stored.
+# Example" "./data/postgres"
+DB_DATA_LOCATION: "<IMMICH_DB_DATA_LOCATION>"
+
+# Timezone setting using TZ database identifiers.
+# Example: "America/Toronto"
+TZ: "<TIMEZONE>"
+
+# The Immich version to use. 
+# Example: "release"
+IMMICH_VERSION: "<IMMICH_VERSION>"
+
+# Connection secret for the PostgreSQL database. Use only the characters `A-Za-z0-9`, without special characters or spaces.
+DB_PASSWORD: "<IMMICH_DB_PASSWORD>"
+
+# These values typically do not need to be changed.
+DB_USERNAME: "postgres"
+DB_DATABASE_NAME: "immich"
+#####################################################################################################################################################################
+# Joplin environment variables
+#####################################################################################################################################################################
+# PostgreSQL Configuration
+POSTGRES_USER: "<POSTGRES_USER>"  # PostgreSQL username for Joplin.
+POSTGRES_PASSWORD: "<POSTGRES_PASSWORD>"  # PostgreSQL password for Joplin.
+POSTGRES_DATABASE: "<POSTGRES_DATABASE>"  # PostgreSQL database name for Joplin.
+POSTGRES_PORT: "<POSTGRES_PORT>"  # PostgreSQL port number.
+
+# Joplin Server Configuration
+APP_BASE_URL: "<JOPLIN_SERVER_BASE_URL>"  # Base URL for Joplin Server.
+#####################################################################################################################################################################
+# Pihole environment variables
+#####################################################################################################################################################################
+WEBPASSWORD: "<PIHOLE_WEBPASSWORD>"  # Web interface password for Pihole.
+#####################################################################################################################################################################
+# Registry environment variables
+#####################################################################################################################################################################
+REGISTRY_USER: "<REGISTRY_USERNAME>"  # Username for the Docker Registry.
+REGISTRY_PASSWORD: "<REGISTRY_PASSWORD>"  # Password for the Docker Registry.
+#####################################################################################################################################################################
+# Watchtower environment variables
+#####################################################################################################################################################################
+WATCHTOWER_HOSTNAME: "<WATCHTOWER_HOSTNAME>"  # The hostname of the Watchtower container.
+WATCHTOWER_NOTIFICATIONS: "<WATCHTOWER_NOTIFICATION_TYPE>"  # Type of notifications to send (e.g., "email").
+WATCHTOWER_NOTIFICATION_EMAIL_FROM: "<WATCHTOWER_NOTIFICATION_EMAIL_FROM>"  # Sender email address for notifications.
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER: "<WATCHTOWER_SMTP_SERVER>"  # SMTP server address for email notifications.
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT: "<WATCHTOWER_SMTP_PORT>"  # SMTP server port.
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER: "<WATCHTOWER_SMTP_USERNAME>"  # SMTP username.
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD: "<WATCHTOWER_SMTP_PASSWORD>"  # SMTP password (sensitive).
+WATCHTOWER_NOTIFICATION_EMAIL_TO: "<WATCHTOWER_NOTIFICATION_EMAIL_TO>"  # Recipient email address.
+WATCHTOWER_CLEANUP: "<WATCHTOWER_CLEANUP_ENABLED>"  # Enable cleanup of old images (true/false).
+WATCHTOWER_INCLUDE_RESTARTING: "<WATCHTOWER_INCLUDE_RESTARTING>"  # Include restarting containers (true/false).
+WATCHTOWER_POLL_INTERVAL: "<WATCHTOWER_POLL_INTERVAL>"  # Polling interval in seconds.
+#####################################################################################################################################################################
+# Samba environment variables
+#####################################################################################################################################################################
+SMB_USER: "<user>"
+SMB_PASSWORD: "<password>"

@@ -1,0 +1,8 @@
+---
+- name: Schedule reboot check cron job
+  become: true
+  cron:
+    name: "Daily reboot required check"
+    minute: "15"
+    hour: "0"
+    job: "{{ cron_scripts_path }}/reboot_check.sh >> {{ cron_log_path }}/reboot_check.log 2>&1"

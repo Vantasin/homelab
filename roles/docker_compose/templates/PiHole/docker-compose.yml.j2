@@ -1,0 +1,32 @@
+# More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    networks:
+      - pihole_net
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "88:80/tcp"     # Expose Pi-hole's web interface on port 88 of the host
+      - "8443:443/tcp"  # HTTPS with self-signed certificate
+      # Uncomment below if using Pi-hole as your DHCP server
+      # - "67:67/udp"
+    environment:
+      TZ: 'America/Toronto'
+      FTLCONF_webserver_api_password: ${WEBPASSWORD}
+      # Uncomment if using DNSMASQ persistence from v5 migration
+      # FTLCONF_misc_etc_dnsmasq_d: 'true'
+    volumes:
+      - ./data/etc-pihole:/etc/pihole
+      # Uncomment if migrating dnsmasq configs
+      # - ./data/etc-dnsmasq.d:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN   # Needed for DHCP
+      - SYS_TIME    # Needed for NTP time sync
+      - SYS_NICE    # Optional: gives Pi-hole higher process priority
+    restart: unless-stopped
+
+networks:
+  pihole_net:
+    driver: bridge

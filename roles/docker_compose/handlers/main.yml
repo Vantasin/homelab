@@ -1,0 +1,14 @@
+---
+- name: Show stacks being restarted
+  debug:
+    msg: "Restarting stack: {{ item }}"
+
+- name: Restart only changed stacks
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_dir }}/{{ item }}"
+    files:
+      - "{{ docker_dir }}/{{ item }}/docker-compose.yml"
+    state: restarted
+  loop: "{{ changed_stacks | default([]) | unique }}"
+  listen: restart changed stacks

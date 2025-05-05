@@ -1,0 +1,9 @@
+---
+- name: Set ip_binding using Tailscale IP if available, fallback to default
+  set_fact:
+    ip_binding: >-
+      {{ (ansible_tailscale0.ipv4.address | default('')) or ansible_default_ipv4.address }}
+
+- name: Show resolved IP binding
+  debug:
+    var: ip_binding

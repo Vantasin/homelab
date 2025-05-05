@@ -1,0 +1,31 @@
+---
+- name: Find all .j2 templates in {{ stack.name }}
+  set_fact:
+    all_templates: "{{ lookup('fileglob', role_path + '/templates/' + stack.name + '/*.j2', wantlist=True) }}"
+
+- name: Render all .j2 templates for {{ stack.name }}
+  become: true
+  vars:
+    filename: "{{ file | basename }}"
+    output_name: >-
+      {{
+        filename
+        | regex_replace('^env\.j2$', '.env')
+        | regex_replace('\.j2$', '')
+      }}
+  template:
+    src: "{{ stack.name }}/{{ filename }}"
+    dest: "{{ [ docker_dir, stack.name, output_name ] | path_join }}"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+    mode: "{{ filename.endswith('.sh.j2') | ternary('0755', '0644') }}"
+  loop: "{{ all_templates }}"
+  loop_control:
+    loop_var: file
+  register: rendered_files
+  notify: restart changed stacks
+
+- name: Record changed stacks from rendered templates for {{ stack.name }}
+  set_fact:
+    changed_stacks: "{{ (changed_stacks | default([])) + [ stack.name ] }}"
+  when: rendered_files.changed

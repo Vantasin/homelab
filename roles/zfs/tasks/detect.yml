@@ -1,0 +1,105 @@
+---
+# --------------------------------------------------------------------
+# ZFS Disk Detection and Selection Logic
+# --------------------------------------------------------------------
+
+- name: 🛠️ Ensure Ansible local facts directory exists
+  become: true
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+    mode: '0755'
+
+# --------------------------------------------------------------------
+# 1. List all available whole block devices
+# --------------------------------------------------------------------
+- name: 📦 List all available block devices (whole disks only)
+  shell: lsblk -ndo NAME,TYPE | awk '$2=="disk"{print "/dev/"$1}'
+  register: raw_disks
+  changed_when: false
+
+- name: 🔍 Raw block devices detected
+  debug:
+    msg: "Raw block devices: {{ raw_disks.stdout_lines }}"
+
+# --------------------------------------------------------------------
+# 2. Get mounted partitions/disks and determine parent disks
+# --------------------------------------------------------------------
+- name: 📌 Get all mounted /dev/* partitions and disks
+  shell: findmnt -rn -o SOURCE | grep '^/dev/' || true
+  register: mounted_partitions
+  changed_when: false
+
+- name: 🔍 Mounted /dev partitions and disks
+  debug:
+    msg: "Mounted sources: {{ mounted_partitions.stdout_lines }}"
+
+- name: 🔄 Resolve parent disks of mounted partitions
+  shell: |
+    for dev in {{ mounted_partitions.stdout_lines | join(' ') }}; do
+      lsblk -no PKNAME "$dev"
+    done | grep -v '^$' | sort -u
+  register: mounted_disk_names
+  changed_when: false
+
+- name: 🧱 Convert parent disk names to full /dev paths
+  set_fact:
+    mounted_parent_disks: "{{ mounted_disk_names.stdout_lines | map('regex_replace', '^(.*)$', '/dev/\\1') | list | unique }}"
+
+- name: 🔍 Parent disks from mounted partitions
+  debug:
+    msg: "Parent disks from mounted partitions: {{ mounted_parent_disks }}"
+
+# --------------------------------------------------------------------
+# 3. Detect directly mounted whole disks (not partitioned)
+# --------------------------------------------------------------------
+- name: 🧩 Detect directly mounted whole disks (no partition suffix)
+  set_fact:
+    mounted_whole_disks: >-
+      {{ mounted_partitions.stdout_lines
+         | select('match', '^/dev/[a-z]+$')
+         | list }}
+
+- name: 🔍 Directly mounted whole disks
+  debug:
+    msg: "Whole disks mounted directly: {{ mounted_whole_disks }}"
+
+# --------------------------------------------------------------------
+# 4. Combine all mounted disks
+# --------------------------------------------------------------------
+- name: 🧮 Combine mounted parent disks and whole disks
+  set_fact:
+    mounted_disks: "{{ (mounted_parent_disks + mounted_whole_disks) | unique }}"
+
+- name: 🔍 Final list of mounted disks
+  debug:
+    msg: "Mounted disks (excluded from ZFS candidate list): {{ mounted_disks }}"
+
+# --------------------------------------------------------------------
+# 5. Normalize user-defined exclusions
+# --------------------------------------------------------------------
+- name: 📜 Normalize excluded disk names to /dev/ paths
+  set_fact:
+    normalized_excluded_disks: "{{ excluded_disks | map('regex_replace', '^(.*)$', '/dev/\\1') | list }}"
+
+- name: 🔍 Normalized excluded disks
+  debug:
+    msg: "Excluded disks from defaults: {{ normalized_excluded_disks }}"
+
+# --------------------------------------------------------------------
+# 6. Determine candidate disks (auto-detected only)
+# --------------------------------------------------------------------
+- name: 🎯 Auto-detect candidate disks from raw list
+  set_fact:
+    candidate_disks: >-
+      {{ raw_disks.stdout_lines
+         | reject('in', mounted_disks + normalized_excluded_disks)
+         | list }}
+
+- name: ✅ Final candidate disks selected for ZFS pool
+  debug:
+    msg: >-
+      Candidate disks: {{ candidate_disks }}
+      (raw: {{ raw_disks.stdout_lines }},
+       mounted: {{ mounted_disks }},
+       excluded: {{ normalized_excluded_disks }})

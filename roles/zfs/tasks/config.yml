@@ -1,0 +1,72 @@
+---
+- name: Limit ZFS ARC size
+  become: true
+  copy:
+    dest: /etc/modprobe.d/zfs.conf
+    content: |
+      options zfs zfs_arc_max={{ zfs_arc_max }}
+    mode: '0644'
+  notify: reload zfs
+
+# -- COMPRESSION --
+
+- name: Check current compression setting
+  become: true
+  command: zfs get -H -o value compression {{ zfs_pool_name }}
+  register: current_compression
+  changed_when: false
+  failed_when: false
+  when: zfs_pool_check.rc == 0
+
+- name: Enable ZFS compression if needed
+  become: true
+  command: zfs set compression={{ zfs_compression_algorithm }} {{ zfs_pool_name }}
+  when:
+    - zfs_enable_compression
+    - zfs_pool_check.rc == 0
+    - not zfs_dry_run
+    - current_compression.stdout != zfs_compression_algorithm
+
+- name: Show ZFS compression command (dry-run only)
+  debug:
+    msg: "🧪 Dry-run: Would run `zfs set compression={{ zfs_compression_algorithm }} {{ zfs_pool_name }}`"
+  when:
+    - zfs_enable_compression
+    - zfs_pool_check.rc == 0
+    - zfs_dry_run
+    - current_compression.stdout != zfs_compression_algorithm
+
+# -- ATIME --
+
+- name: Check current atime setting
+  become: true
+  command: zfs get -H -o value atime {{ zfs_pool_name }}
+  register: current_atime
+  changed_when: false
+  failed_when: false
+  when: zfs_pool_check.rc == 0
+
+- name: Disable access time updates if needed
+  become: true
+  command: zfs set atime=off {{ zfs_pool_name }}
+  when:
+    - zfs_disable_atime
+    - zfs_pool_check.rc == 0
+    - not zfs_dry_run
+    - current_atime.stdout != "off"
+
+- name: Show ZFS atime setting command (dry-run only)
+  debug:
+    msg: "🧪 Dry-run: Would run `zfs set atime=off {{ zfs_pool_name }}`"
+  when:
+    - zfs_disable_atime
+    - zfs_pool_check.rc == 0
+    - zfs_dry_run
+    - current_atime.stdout != "off"
+
+# -- FALLBACK: Show skip reason --
+
+- name: Skip ZFS configuration because pool does not exist
+  debug:
+    msg: "⏩ Skipping ZFS configuration: Pool '{{ zfs_pool_name }}' does not exist or was not provisioned."
+  when: zfs_pool_check.rc != 0

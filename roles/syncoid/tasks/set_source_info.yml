@@ -1,0 +1,13 @@
+---
+- name: Gather facts for live host
+  setup:
+  delegate_to: "{{ live_host }}"
+  delegate_facts: true
+  run_once: true
+
+- name: Determine Syncoid connection info
+  set_fact:
+    syncoid_source_host: "{{ hostvars[live_host].ansible_default_ipv4.address }}"
+    syncoid_source_user: "{{ hostvars[live_host].ansible_user_id }}"
+    syncoid_ssh_key_path: "{{ hostvars[backup_host].ansible_user_dir }}/.ssh/id_rsa"
+  run_once: true

@@ -1,0 +1,5 @@
+---
+- name: reload zfs
+  become: true
+  command: modprobe -r zfs && modprobe zfs
+  when: ansible_service_mgr == 'systemd'

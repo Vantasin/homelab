@@ -1,0 +1,6 @@
+---
+galaxy_info:
+  author: Vantasin
+  description: Install and configure msmtp
+  min_ansible_version: 2.9
+dependencies: []

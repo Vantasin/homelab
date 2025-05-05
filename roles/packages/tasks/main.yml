@@ -1,0 +1,6 @@
+---
+- import_tasks: install_packages.yml
+- import_tasks: fail2ban.yml
+- import_tasks: enable_cron.yml
+- import_tasks: lazygit.yml
+- import_tasks: lazydocker.yml

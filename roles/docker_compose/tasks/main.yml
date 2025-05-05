@@ -1,0 +1,27 @@
+- name: Prepare docker-compose directories
+  include_tasks: prepare.yml
+
+- name: Create ZFS datasets for each docker-compose stack
+  include_tasks: create_zfs_datasets.yml
+
+- name: Include IP resolution logic
+  include_tasks: set_effective_ip.yml
+
+- name: Render all templates (env, compose, scripts, configs)
+  include_tasks: render_templates.yml
+
+- name: Generate htpasswd if Registry stack is enabled
+  include_tasks: registry_htpasswd.yml
+  when: "'Registry' in docker_stack | map(attribute='name') | list"
+
+- name: Schedule Joplin cron job
+  include_tasks: cron_joplin.yml
+
+- name: Schedule Grafana cron job
+  include_tasks: cron_grafana_backup.yml
+
+- name: Debug changed stacks
+  include_tasks: render_debug.yml
+
+- name: Deploy docker stacks
+  include_tasks: deploy.yml

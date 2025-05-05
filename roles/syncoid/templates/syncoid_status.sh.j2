@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Ensure script is run as root
+if [[ "$EUID" -ne 0 ]]; then
+  echo "This script must be run as root." >&2
+  exit 1
+fi
+
+echo "🔍 Checking for running syncoid replication jobs..."
+echo
+
+# Get list of relevant PIDs
+PIDS=$(ps -eo pid,lstart,cmd | grep -E "syncoid|syncoid_cron_notify.sh" | grep -v grep)
+
+if [[ -z "$PIDS" ]]; then
+  echo "✅ No running syncoid replication jobs found."
+  exit 0
+fi
+
+echo "⚡ Running syncoid-related processes:"
+echo
+
+# Print running syncoid processes with uptime
+printf "%-8s %-25s %s\n" "PID" "START TIME" "COMMAND"
+echo "--------------------------------------------------------------------------------"
+
+ps -eo pid,lstart,cmd | grep -E "syncoid|syncoid_cron_notify.sh" | grep -v grep | while read -r PID START1 START2 START3 START4 START5 CMD; do
+    echo "$(printf "%-8s %-25s %s" "$PID" "$START1 $START2 $START3 $START4 $START5" "$CMD")"
+done
+
+echo
+echo "⚠️  Syncoid replication is currently running."
+
+# Prompt user to kill
+read -rp "❓ Do you want to stop all syncoid-related processes? (y/N): " ANSWER
+
+if [[ "$ANSWER" =~ ^[Yy]$ ]]; then
+    echo
+    echo "🛑 Stopping syncoid replication cleanly..."
+
+    # Find and kill the cron notify script first
+    WRAPPER_PIDS=$(ps -eo pid,cmd | grep "syncoid_cron_notify.sh" | grep -v grep | awk '{print $1}')
+    if [[ -n "$WRAPPER_PIDS" ]]; then
+      echo "Killing cron wrapper processes: $WRAPPER_PIDS"
+      sudo kill $WRAPPER_PIDS || true
+    fi
+
+    sleep 1
+
+    # Find and kill the main syncoid process
+    SYNCOID_PIDS=$(ps -eo pid,cmd | grep "/usr/sbin/syncoid" | grep -v grep | awk '{print $1}')
+    if [[ -n "$SYNCOID_PIDS" ]]; then
+      echo "Killing syncoid processes: $SYNCOID_PIDS"
+      sudo kill $SYNCOID_PIDS || true
+    fi
+
+    sleep 1
+
+    # Kill any leftover SSH tunnels
+    SSH_PIDS=$(ps -eo pid,cmd | grep '/tmp/syncoid-' | grep -v grep | awk '{print $1}')
+    if [[ -n "$SSH_PIDS" ]]; then
+      echo "Killing SSH tunnel processes: $SSH_PIDS"
+      sudo kill $SSH_PIDS || true
+    fi
+
+    echo
+    echo "✅ All syncoid-related processes stopped."
+else
+    echo
+    echo "ℹ️ No processes were killed."
+fi

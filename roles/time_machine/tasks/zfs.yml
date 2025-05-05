@@ -1,0 +1,20 @@
+- name: Ensure parent dataset exists
+  command: "zfs list -H -o name {{ zfs_pool_name }}/TimeMachine"
+  register: timemachine_parent_check
+  failed_when: false
+  changed_when: false
+
+- name: Create parent dataset for Time Machine
+  command: >
+    zfs create -o mountpoint={{ timemachine_dir }}
+    {{ zfs_pool_name }}/TimeMachine
+  when: timemachine_parent_check.rc != 0
+
+- name: Create ZFS dataset for each Time Machine user
+  command: >
+    zfs create
+    -o mountpoint={{ timemachine_dir }}/{{ item.username }}
+    {{ zfs_pool_name }}/TimeMachine/{{ item.username }}
+  args:
+    creates: "{{ timemachine_dir }}/{{ item.username }}"
+  loop: "{{ time_machine_users }}"

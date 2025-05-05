@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# This script allows you to select and restore a backup of the Joplin PostgreSQL database.
+
+set -euo pipefail
+
+BACKUP_DIR="{{ docker_dir }}/{{ stack.name }}/backups"
+CONTAINER_NAME="joplin-db-1"
+DB_NAME={{ POSTGRES_DATABASE }}
+DB_USER={{ POSTGRES_USER }}
+
+{% raw %}
+
+cd "$BACKUP_DIR" || { echo "❌ Backup directory not found."; exit 1; }
+
+echo "Available backups:"
+echo
+
+mapfile -t BACKUP_FILES < <(ls -1 joplin_backup_*.dump 2>/dev/null)
+if [[ ${#BACKUP_FILES[@]} -eq 0 ]]; then
+    echo "❌ No backups found in $BACKUP_DIR"
+    exit 1
+fi
+
+for i in "${!BACKUP_FILES[@]}"; do
+    printf "[%2d] %s\n" "$i" "${BACKUP_FILES[$i]}"
+done
+
+echo
+read -rp "Enter the number of the backup to restore: " INDEX
+
+if [[ ! "$INDEX" =~ ^[0-9]+$ ]] || [[ "$INDEX" -lt 0 ]] || [[ "$INDEX" -ge "${#BACKUP_FILES[@]}" ]]; then
+    echo "❌ Invalid selection."
+    exit 1
+fi
+
+SELECTED="${BACKUP_FILES[$INDEX]}"
+echo "⏳ Restoring from: $SELECTED"
+
+docker cp "$BACKUP_DIR/$SELECTED" "$CONTAINER_NAME:/tmp/$SELECTED"
+docker exec -it "$CONTAINER_NAME" pg_restore -U "$DB_USER" -d "$DB_NAME" -c "/tmp/$SELECTED"
+docker exec "$CONTAINER_NAME" rm "/tmp/$SELECTED"
+
+echo "✅ Restore complete."
+{% endraw %}

@@ -1,0 +1,8 @@
+- name: Install logrotate config for Syncoid
+  ansible.builtin.template:
+    src: syncoid_logrotate.conf.j2
+    dest: /etc/logrotate.d/syncoid
+    owner: root
+    group: root
+    mode: '0644'
+  become: true

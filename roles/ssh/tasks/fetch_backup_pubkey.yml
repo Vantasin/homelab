@@ -1,0 +1,9 @@
+- name: Slurp public key from backup server
+  ansible.builtin.slurp:
+    src: "{{ hostvars[backup_host].ansible_user_dir }}/.ssh/id_rsa.pub"
+  delegate_to: "{{ backup_host }}"
+  register: backup_key_raw
+
+- name: Decode the backup public key
+  set_fact:
+    backup_ssh_pubkey: "{{ backup_key_raw.content | b64decode }}"

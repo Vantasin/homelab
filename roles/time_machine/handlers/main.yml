@@ -1,0 +1,11 @@
+- name: Restart Samba
+  become: true
+  systemd:
+    name: smbd
+    state: restarted
+
+- name: Restart Avahi
+  become: true
+  systemd:
+    name: avahi-daemon
+    state: restarted

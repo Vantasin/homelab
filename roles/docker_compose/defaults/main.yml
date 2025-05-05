@@ -1,0 +1,4 @@
+---
+docker_dir: "{{ zfs_mount_point }}/docker"
+zfs_pool: "{{ zfs_pool_name }}"
+zfs_mount: "{{ zfs_mount_point }}"

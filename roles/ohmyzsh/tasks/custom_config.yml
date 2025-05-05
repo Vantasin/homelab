@@ -1,0 +1,10 @@
+---
+- name: Create custom Zsh configs
+  copy:
+    dest: "/home/{{ ohmyzsh_user }}/.oh-my-zsh/custom/{{ item.name }}"
+    content: "{{ item.content }}"
+    owner: "{{ ohmyzsh_user }}"
+    group: "{{ ohmyzsh_user }}"
+    mode: "0644"
+  with_items: "{{ ohmyzsh_custom_configs }}"
+  become: false

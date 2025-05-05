@@ -1,0 +1,7 @@
+---
+# Entry point: simply import each task file, no other logic here.
+- import_tasks: prepare.yml
+- import_tasks: setup_scripts.yml
+- import_tasks: reboot_check.yml
+- import_tasks: zfs_scrub.yml
+- import_tasks: logrotate.yml

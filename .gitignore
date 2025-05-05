@@ -1,0 +1,20 @@
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Ansible artifacts
+*.retry
+
+# Ignore editor backups
+*~
+*.swp
+
+# Ignore Secerets
+vault_pass.txt
+.vault_pass.txt

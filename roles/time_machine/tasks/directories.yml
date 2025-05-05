@@ -1,0 +1,8 @@
+- name: Ensure correct permissions on ZFS mountpoints
+  file:
+    path: "{{ timemachine_dir }}/{{ item.username }}"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: "0770"
+  loop: "{{ time_machine_users }}"
+  notify: Restart Samba

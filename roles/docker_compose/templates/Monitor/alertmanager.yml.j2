@@ -1,0 +1,11 @@
+global:
+  smtp_smarthost: "{{ smtp_host }}:{{ smtp_port }}"
+  smtp_from: "{{ from_email }}"
+  smtp_auth_username: "{{ msmtp_user }}"
+  smtp_auth_password: "{{ email_password }}"
+route:
+  receiver: "default-receiver"
+receivers:
+  - name: "default-receiver"
+    email_configs:
+      - to: "{{ test_email }}"

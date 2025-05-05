@@ -1,0 +1,8 @@
+- name: Deploy syncoid status helper script
+  ansible.builtin.template:
+    src: syncoid_status.sh.j2
+    dest: "{{ syncoid_cron_script_path }}/syncoid_status.sh"
+    mode: "0755"
+    owner: root
+    group: root
+  become: true

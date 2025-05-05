@@ -1,0 +1,9 @@
+---
+- name: Configure Testpi Server (Test)
+  hosts: testpi
+  roles:
+    - docker_compose
+
+- name: Configure Backup Server (Test)
+  hosts: backup
+  roles:

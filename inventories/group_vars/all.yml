@@ -1,0 +1,15 @@
+---
+# Global (all envs) fall-backs
+ansible_python_interpreter: /usr/bin/python3
+timezone: "America/Toronto"
+
+# ZFS Pool Info
+zfs_pool_name: tank
+zfs_mount_point: "/tank"
+
+# Cron Scripts Path
+scripts_path: "/usr/local/bin/cron"
+
+# SSH role targets
+backup_host: "backup"
+live_host: "testpi"

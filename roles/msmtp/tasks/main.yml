@@ -1,0 +1,14 @@
+---
+# Main task entry point for msmtp role
+
+- name: Install msmtp and logrotate
+  import_tasks: install.yml
+
+- name: Configure msmtp and log file
+  import_tasks: configure.yml
+
+- name: Configure log rotation
+  import_tasks: logrotate.yml
+
+- name: Run test email
+  import_tasks: test.yml
